@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# PDF files — keep folder, ignore contents
+pdfs/*.pdf
+pdfs/*.json
+
+# Intermediate files
+*_extracted.json
+*_translated.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/*.local.json
+.claude/memory/
+
+# Environment
+.env
+.env.*

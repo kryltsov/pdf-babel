@@ -1,0 +1,66 @@
+# PDF Translator Configuration
+# This file controls translation behavior for the pdf_translator pipeline.
+
+# --- Languages ---
+source_language: Ukrainian
+target_language: Spanish
+
+# --- Document type ---
+# Affects which medical dictionaries are loaded.
+# Options: blood_test, urine_test, general_medical
+document_type: blood_test
+
+# --- Instructions for Claude ---
+# Free-text guidance that Claude will follow when doing LLM-assisted translation.
+# Use this to describe edge cases, domain-specific rules, or anything the
+# rule-based translator can't handle.
+instructions: |
+  This is a Ukrainian medical laboratory report being translated to Spanish.
+  Do not translate the clinic header area where the logo is located.
+  Keep all English medical codes (WBC, NEUT#, HGB, etc.) unchanged.
+  Gender value "Ж" means Female - translate to "F". "Ч" means Male - translate to "M".
+  Measurement units should use international Latin abbreviations (mmol/l, µmol/l, g/l, U/l).
+  Equipment brand and model names (Roche, Siemens, Cobas, Sysmex, etc.) must stay in English.
+  Patient names are proper nouns and must not be translated.
+
+# --- Header zone ---
+# How to identify the non-translatable header area.
+# "auto" uses the logo image position to detect it automatically.
+# Or set a fixed pixel threshold from the top of the page.
+header_detection: auto
+# header_fixed_y: 110  # uncomment to use a fixed Y threshold instead of auto
+
+# --- Person name translation ---
+# Patient/person names in the source language are often neither source nor target
+# language — doctors need them in English (Latin) transliteration.
+# Map original name → replacement. Leave empty to keep names as-is.
+name_translations:
+  # "Коваленко Софія Олегівна": "Kovalenko Sofia Olehivna"
+
+# --- Do not translate ---
+# Exact strings that should never be translated, even if they contain Cyrillic.
+# Institution codes, specific terms you want preserved.
+# (Patient names are handled by name_translations above — if a name is listed
+# there it gets transliterated; if not, it stays as-is.)
+do_not_translate:
+  - "ЄДРПОУ"
+
+# --- Do not translate patterns ---
+# Regex patterns for text that should be kept as-is.
+# Useful for codes, IDs, or structured text you want to preserve.
+do_not_translate_patterns:
+  - "^\\d{6,}$"           # long number sequences (order numbers)
+  - "^\\d{2}\\.\\d{2}\\.\\d{4}$"  # dates DD.MM.YYYY
+  - "^[A-Z][A-Z0-9\\-#%]*$"       # English medical codes
+
+# --- Custom translations ---
+# Override or add translations beyond the built-in dictionary.
+# These take priority over the built-in translations.
+custom_translations:
+  # "Українське слово": "Traducción española"
+
+# --- Preserve zones ---
+# Which detected zones should be left untranslated.
+# Options: header, footer, patient_name
+preserve_zones:
+  - header
