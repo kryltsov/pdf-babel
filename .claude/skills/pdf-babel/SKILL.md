@@ -1,6 +1,6 @@
 ---
 name: pdf-babel
-description: Translate a PDF document while preserving layout. Extracts text spans, applies rule-based medical dictionaries, and rebuilds the PDF with translated text at original positions. Asks for clarification on unknown terms with surrounding context.
+description: Translate a PDF document while preserving layout. Extracts text spans, applies rule-based medical dictionaries (lab results, ultrasound reports), and rebuilds the PDF with translated text at original positions. Asks for clarification on unknown terms with surrounding context.
 argument-hint: <pdf-path>
 user_invocable: true
 ---
@@ -9,12 +9,23 @@ user_invocable: true
 
 Translate a PDF document while preserving the original layout (images, borders, fonts, positioning). Only the text changes.
 
+Supported document types: `blood_test`, `urine_test`, `breast_ultrasound`, `general_medical`.
+
 ## Step 1: Check config
 
 Read `pdf_translate_config.yaml` to understand the current settings. If it doesn't exist, create one:
 ```bash
 source .venv/Scripts/activate && python -m pdf_translator.cli init-config
 ```
+
+Key config fields to review:
+- `document_type` — must match the PDF being translated
+- `header_detection` / `header_fixed_y` — controls what's treated as non-translatable header
+- `instructions` — free-text guidance tailored to the document type
+- `phrase_translations` — additional phrase-level replacements for narrative text (ultrasound reports, etc.)
+- `do_not_translate_patterns` — regex patterns for codes to preserve (e.g. BI-RADS)
+
+If the document type doesn't match, update the config before proceeding. For a new document type, see the manual at `docs/adding-document-types.md`.
 
 ## Step 2: Run pipeline
 
@@ -58,10 +69,14 @@ For EACH unknown term returned by the check command, ask the user for help. Form
 
 Wait for the user to respond to ALL unknown terms before continuing.
 
-After getting answers:
+After getting answers, decide where each translation belongs:
 
-- For terms the user provides translations for: add them to `custom_translations` in `pdf_translate_config.yaml`
-- For terms the user says to keep: add them to `do_not_translate` in `pdf_translate_config.yaml`
+- **Single words / exact span matches** → add to `custom_translations` in config
+- **Phrases that appear within longer narrative spans** → add to `phrase_translations` in config
+- **Terms to keep as-is** → add to `do_not_translate` in config
+- **Patterns to keep as-is** (codes, IDs) → add to `do_not_translate_patterns` in config
+
+If many unknowns share a domain (e.g. a new type of medical report), consider adding a new dictionary section in `pdf_translator/translate.py` instead of piling entries into the config. See `docs/adding-document-types.md` for the full workflow.
 
 Then re-run the pipeline:
 ```bash
@@ -82,11 +97,12 @@ Tell the user:
 Follow the `instructions` field from the config. Core rules:
 
 - **Header zone**: NEVER translate (clinic info, logo area, document codes)
-- **Patient names**: Keep as-is unless name_translations are configured
+- **Patient/doctor names**: Keep as-is unless `name_translations` are configured
 - **Numbers, dates, order numbers**: Keep as-is
-- **English medical codes** (WBC, NEUT#, HGB, etc.): Keep as-is
+- **English medical codes** (WBC, NEUT#, HGB, BI-RADS, etc.): Keep as-is
 - **Equipment brand/model names**: Keep as-is
 - **Gender**: "Ж" → "F", "Ч" → "M"
 - **Measurement units**: Convert Cyrillic → Latin (ммоль/л → mmol/l)
 - **Medical terms**: Standard medical terminology in target language
 - **Reference intervals**: Translate words, keep numbers
+- **Narrative text** (ultrasound reports, etc.): Phrase-level translation using longest-first matching — built-in dictionaries + `phrase_translations` from config

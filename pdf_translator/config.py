@@ -56,6 +56,7 @@ class TranslateConfig:
     do_not_translate: list[str] = field(default_factory=list)
     do_not_translate_patterns: list[re.Pattern] = field(default_factory=list)
     custom_translations: dict[str, str] = field(default_factory=dict)
+    phrase_translations: dict[str, str] = field(default_factory=dict)
     preserve_zones: list[str] = field(default_factory=lambda: ["header"])
 
     @property
@@ -121,5 +122,6 @@ def load_config(config_path: str | None = None) -> TranslateConfig:
         do_not_translate=raw.get("do_not_translate", []),
         do_not_translate_patterns=patterns,
         custom_translations=raw.get("custom_translations", {}) or {},
+        phrase_translations=raw.get("phrase_translations", {}) or {},
         preserve_zones=raw.get("preserve_zones", ["header"]),
     )

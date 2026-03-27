@@ -52,12 +52,36 @@ def is_bold(flags):
     return bool(flags & (1 << 4))  # bit 4 = bold
 
 
+def find_background_rect(filled_rects, bbox):
+    """Find the filled rectangle behind a text span from the page's drawings.
+
+    Args:
+        filled_rects: List of (fitz.Rect, fill_color) from page.get_drawings().
+        bbox: The text span's bounding box [x0, y0, x1, y1].
+
+    Returns an RGB tuple in 0-1 range (white if no background rect found).
+    """
+    # Inset span rect by 1pt to tolerate coordinate rounding between
+    # text extraction and drawing extraction (often differs by <0.01pt)
+    span_rect = fitz.Rect(bbox)
+    inset = fitz.Rect(
+        span_rect.x0 + 1, span_rect.y0 + 1,
+        span_rect.x1 - 1, span_rect.y1 - 1,
+    )
+    # Walk in reverse — later drawings are painted on top of earlier ones
+    for rect, fill in reversed(filled_rects):
+        if rect.contains(inset):
+            return fill
+    return (1.0, 1.0, 1.0)
+
+
 def rebuild_pdf(original_pdf_path, translated_data, output_path):
     """Rebuild PDF by overlaying translated text on the original.
 
     For each span marked as translated:
-    1. Draw a white rectangle over the original text area
-    2. Insert the translated text at the same position
+    1. Find the background drawing (filled rect) behind the span
+    2. Draw a cover rectangle matching that background color
+    3. Insert the translated text, shrinking font if it would overflow
 
     Args:
         original_pdf_path: Path to the original PDF
@@ -77,8 +101,9 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
             "Please install Tahoma, Arial, or DejaVu Sans."
         )
 
-    # Pre-register fonts on each page as needed
-    font_names = {}  # page_num -> {bold: fontname, regular: fontname}
+    # Create Font objects for text width measurement
+    font_obj_regular = fitz.Font(fontfile=font_regular)
+    font_obj_bold = fitz.Font(fontfile=font_bold) if font_bold else None
 
     for page_info in translated_data["pages"]:
         page_num = page_info["page_num"]
@@ -92,10 +117,19 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
         if not translated_spans:
             continue
 
+        # Extract all filled rectangles from the page's vector drawings
+        filled_rects = []
+        for drawing in page.get_drawings():
+            fill = drawing.get("fill")
+            if fill and drawing.get("rect"):
+                filled_rects.append((fitz.Rect(drawing["rect"]), fill))
+
         # Register fonts for this page
         page.insert_font(fontfile=font_regular, fontname="tahoma-r")
         if font_bold:
             page.insert_font(fontfile=font_bold, fontname="tahoma-b")
+
+        page_width = page.rect.width
 
         # Process each translated span
         for span in translated_spans:
@@ -106,7 +140,9 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
             color = int_to_rgb(span["color"])
             bold = is_bold(span["flags"])
 
-            # 1. Draw white rectangle to cover original text
+            # 1. Find background color from PDF drawing structure
+            bg_color = find_background_rect(filled_rects, bbox)
+
             rect = fitz.Rect(
                 bbox[0] - 0.5,   # small padding
                 bbox[1] - 0.5,
@@ -115,11 +151,20 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
             )
             shape = page.new_shape()
             shape.draw_rect(rect)
-            shape.finish(fill=(1, 1, 1), color=(1, 1, 1), width=0)
+            shape.finish(fill=bg_color, color=bg_color, width=0)
             shape.commit()
 
-            # 2. Insert translated text at original position
+            # 2. Measure text width and shrink font if it would overflow
             fontname = "tahoma-b" if bold and font_bold else "tahoma-r"
+            font_obj = font_obj_bold if bold and font_obj_bold else font_obj_regular
+
+            text_width = font_obj.text_length(text, fontsize=size)
+            # Available width: from origin to page right margin (with small margin)
+            max_width = page_width - origin[0] - 2
+            if text_width > max_width and max_width > 0:
+                size = size * max_width / text_width
+
+            # 3. Insert translated text at original position
             page.insert_text(
                 fitz.Point(origin[0], origin[1]),
                 text,

@@ -1,8 +1,9 @@
 """Translate extracted PDF spans from Ukrainian to Spanish.
 
-This module contains the translation logic for medical lab results.
-It applies rule-based translations for known terms and patterns,
-handling the specific requirements of Ukrainian medical documents.
+This module contains the translation logic for medical documents
+(lab results, ultrasound reports, etc.). It applies rule-based
+translations for known terms and patterns, and phrase-level
+translations for narrative medical text.
 """
 
 import re
@@ -192,6 +193,106 @@ MATERIAL_LABEL = {
     "венозна кров": "sangre venosa",
 }
 
+# General medical labels (shared across document types)
+GENERAL_LABEL_TRANSLATIONS = {
+    "Лікар": "Médico",
+    "ВИСНОВОК": "CONCLUSIÓN",
+    "Пацієнт:": "Paciente:",
+    "Дата:": "Fecha:",
+}
+
+# Ultrasound examination — exact span translations (section titles, headings)
+ULTRASOUND_LABEL_TRANSLATIONS = {
+    "Протокол ультразвукового дослідження молочної залози":
+        "Protocolo de ecografía mamaria",
+    "ТЕХНИЧНІ ПАРАМЕТРИ ОБСТЕЖЕННЯ": "PARÁMETROS TÉCNICOS DEL EXAMEN",
+    "ПРОТОКОЛ ОБСТЕЖЕННЯ": "PROTOCOLO DEL EXAMEN",
+    "Висновок УЗД не є діагнозом.": "La conclusión ecográfica no es un diagnóstico.",
+}
+
+# Phrase-level translations for narrative medical text (longest-first matching)
+NARRATIVE_PHRASE_TRANSLATIONS = {
+    # Full sentence / long clause fragments
+    "Протокол огляду повинен перебувати у пацієнта і обов'язково надаватися при":
+        "El protocolo del examen debe permanecer con el paciente y presentarse obligatoriamente durante",
+    "проходженні наступного ультразвукового дослідження":
+        "la realización del siguiente estudio ecográfico",
+    "Дослідження проведено на апараті":
+        "Estudio realizado con el equipo",
+    "Датчик лінійний з діапазоном частот":
+        "Transductor lineal con rango de frecuencias",
+    "Можливість чіткої диференціації тканин":
+        "Posibilidad de diferenciación clara de los tejidos",
+    "Зниження диференціації тканин":
+        "Reducción de la diferenciación de los tejidos",
+    "Співвідношення тканин, що формують молочну залозу":
+        "Proporción de tejidos que forman la glándula mamaria",
+    "Візуалізація позадусоскової області":
+        "Visualización de la región retroareolar",
+    "Візуалізація протоків":
+        "Visualización de los conductos",
+    "Порушення УЗ архітектоніки":
+        "Alteración de la arquitectura ecográfica",
+    "Лімфовузли у регіонарних зонах лімфовідтоку":
+        "Ganglios linfáticos en las zonas regionales de drenaje linfático",
+    "Уз-ознаки Ca лівої молочної залози":
+        "Signos ecográficos de Ca de mama izquierda",
+    "Збільшення підпахвових лімфовузлів":
+        "Aumento de los ganglios linfáticos axilares",
+    "ліва молочна залоза асиметрична":
+        "la mama izquierda es asimétrica",
+    "за винятком середніх пахвових":
+        "excepto los axilares medios",
+    "корковомозгової диференціровки":
+        "de la diferenciación corticomedular",
+    "переважає жирова тканина":
+        "predomina el tejido adiposo",
+    "Документ надруковано за допомогою МІС":
+        "Documento impreso mediante el SIM",
+    "Амбулаторна картка №": "Tarjeta ambulatoria N.º",
+    "Ліцензія МОЗ АВ №": "Licencia del Ministerio de Salud AB N.º",
+    # Medium phrases
+    "з посиленим кровотоком": "con flujo sanguíneo aumentado",
+    "посиленим кровотоком": "flujo sanguíneo aumentado",
+    "не візуалізуються": "no se visualizan",
+    "Ліва молочна залоза": "Mama izquierda",
+    "Права молочна залоза": "Mama derecha",
+    "неправильної форми": "de forma irregular",
+    "з слабою васкулярізацією": "con escasa vascularización",
+    "слабою васкулярізацією": "escasa vascularización",
+    "з фіброзним компонентом": "con componente fibroso",
+    "фіброзним компонентом": "componente fibroso",
+    "кістозне утворення": "formación quística",
+    "без порушення": "sin alteración",
+    "жирова тканина": "tejido adiposo",
+    "Дифузні зміни": "Cambios difusos",
+    "на 6 годинах візуалізується": "a las 6 horas se visualiza",
+    "на 12 годинах візуалізується": "a las 12 horas se visualiza",
+    "візуалізується": "se visualiza",
+    "праворуч до": "a la derecha hasta",
+    "ліворуч до": "a la izquierda hasta",
+    # Short phrases / words
+    "неправильної": "de forma irregular",
+    "Менопауза": "Menopausia",
+    "приблизно": "aproximadamente",
+    "діаметром": "de diámetro",
+    "збільшені": "aumentados",
+    "задовільна": "satisfactoria",
+    "праворуч": "a la derecha",
+    "ліворуч": "a la izquierda",
+    "хороша": "buena",
+    "немає": "no hay",
+    "фіброз": "fibrosis",
+    "років": "años",
+    "Сторінка": "Página",
+    "МГц": "MHz",
+    "мм": "mm",
+    " р.": " a.",  # років → años (age abbreviation)
+}
+
+# BI-RADS code pattern (В may be Cyrillic or Latin)
+BIRADS_PATTERN = re.compile(r'^[\u0412B]I[-\s]?RADS', re.IGNORECASE)
+
 # Patterns that indicate a span should NOT be translated
 # (numeric values, dates, proper names, English codes)
 ENGLISH_CODE_PATTERN = re.compile(
@@ -268,6 +369,40 @@ def translate_equipment_span(text):
     return result
 
 
+def translate_narrative_span(text, config=None):
+    """Translate narrative text by replacing phrases (longest-first).
+
+    Handles free-form medical narrative (e.g. ultrasound reports) where
+    spans contain sentences/clauses rather than discrete table values.
+    """
+    # Normalize multiple whitespace for matching (PDFs often have double spaces)
+    result = text
+
+    # Combine built-in and config phrase translations
+    phrases = dict(NARRATIVE_PHRASE_TRANSLATIONS)
+    if config and config.phrase_translations:
+        phrases.update(config.phrase_translations)
+
+    # Sort by length (longest first) to avoid partial matches
+    for uk, es in sorted(phrases.items(), key=lambda x: -len(x[0])):
+        # Build regex that tolerates multiple whitespace between words
+        pattern = re.escape(uk).replace(r'\ ', r'\s+')
+        result = re.sub(pattern, es, result)
+
+    # Page number pattern: "Сторінка X з Y" → "Página X de Y"
+    # Also handle case where "Сторінка" was already replaced by phrase dict
+    result = re.sub(
+        r'(?:Сторінка|Página)\s+(\d+)\s+з\s+(\d+)', r'Página \1 de \2', result
+    )
+
+    # Handle isolated Ukrainian preposition "з" (= with/from) left after
+    # phrase replacement — common at line-break boundaries
+    result = re.sub(r'(?<=[\s,])\bз\b(?=\s|$)', 'con', result)
+    result = re.sub(r'^\bз\b(?=\s)', 'con', result)
+
+    return result
+
+
 def translate_span(span, prev_span_text="", config=None):
     """Translate a single span's text.
 
@@ -317,6 +452,10 @@ def translate_span(span, prev_span_text="", config=None):
                 translated += " "
             return translated, True
 
+    # BI-RADS codes (В may be Cyrillic В or Latin B)
+    if BIRADS_PATTERN.match(text.strip()):
+        return text, False
+
     # Gender value (Ж → F) - check if previous span was gender label
     if text.strip() in GENDER_MAP:
         return GENDER_MAP[text.strip()], True
@@ -326,6 +465,20 @@ def translate_span(span, prev_span_text="", config=None):
     if text_stripped in LABEL_TRANSLATIONS:
         translated = LABEL_TRANSLATIONS[text_stripped]
         # Preserve trailing/leading whitespace
+        if text.endswith(" ") and not translated.endswith(" "):
+            translated += " "
+        return translated, True
+
+    # Exact match in general medical labels
+    if text_stripped in GENERAL_LABEL_TRANSLATIONS:
+        translated = GENERAL_LABEL_TRANSLATIONS[text_stripped]
+        if text.endswith(" ") and not translated.endswith(" "):
+            translated += " "
+        return translated, True
+
+    # Exact match in ultrasound labels
+    if text_stripped in ULTRASOUND_LABEL_TRANSLATIONS:
+        translated = ULTRASOUND_LABEL_TRANSLATIONS[text_stripped]
         if text.endswith(" ") and not translated.endswith(" "):
             translated += " "
         return translated, True
@@ -351,25 +504,30 @@ def translate_span(span, prev_span_text="", config=None):
         if text_stripped == uk:
             return es, True
 
-    # Reference interval text (mixed Ukrainian words + numbers)
-    # Check if it contains any Ukrainian reference words
-    has_uk_words = any(uk in normalized for uk in REFERENCE_WORD_TRANSLATIONS)
-    if has_uk_words:
-        translated = translate_reference_text(normalized)
-        if translated != normalized:
-            return translated, True
-
     # Page number indicators like "1"
     if text.strip().isdigit() and len(text.strip()) <= 2:
         return text, False
 
-    # If text contains Cyrillic characters but wasn't matched above,
-    # it might be a name or untranslated term - keep as-is
     has_cyrillic = bool(re.search(r'[а-яА-ЯіІїЇєЄґҐ]', text))
     if has_cyrillic:
         # Check if it's likely a proper name (follows name label)
         if _looks_like_name(text):
             return text, False
+
+        # Try narrative phrase-level translation first (for ultrasound reports, etc.)
+        # This is more comprehensive than reference word translation and handles
+        # narrative sentences with embedded medical terms.
+        translated = translate_narrative_span(normalized, config)
+        if translated != normalized:
+            return translated, True
+
+    # Reference interval text (mixed Ukrainian words + numbers)
+    # Falls through here only if narrative translation didn't change the text.
+    has_uk_words = any(uk in normalized for uk in REFERENCE_WORD_TRANSLATIONS)
+    if has_uk_words:
+        translated = translate_reference_text(normalized)
+        if translated != normalized:
+            return translated, True
 
     return text, False
 
@@ -452,6 +610,8 @@ def find_unknowns(data, config=None):
             if text in do_not_translate:
                 continue
             if _looks_like_name(text):
+                continue
+            if BIRADS_PATTERN.match(text):
                 continue
 
             # Gather surrounding context (body spans only)
