@@ -55,10 +55,15 @@ def extract_pdf(pdf_path, config=None):
     for page_num in range(len(doc)):
         page = doc[page_num]
         blocks = page.get_text("dict")["blocks"]
-        header_bottom_y = (
-            config.header_fixed_y if use_fixed_header
-            else find_header_bottom(blocks)
-        )
+
+        # If header_first_page_only, skip header detection on pages after the first
+        if (config is not None and config.header_first_page_only
+                and page_num > 0):
+            header_bottom_y = 0
+        elif use_fixed_header:
+            header_bottom_y = config.header_fixed_y
+        else:
+            header_bottom_y = find_header_bottom(blocks)
 
         page_data = {
             "page_num": page_num,

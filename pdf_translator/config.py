@@ -52,6 +52,7 @@ class TranslateConfig:
     instructions: str = ""
     header_detection: str = "auto"
     header_fixed_y: float | None = None
+    header_first_page_only: bool = False
     name_translations: dict[str, str] = field(default_factory=dict)
     do_not_translate: list[str] = field(default_factory=list)
     do_not_translate_patterns: list[re.Pattern] = field(default_factory=list)
@@ -118,6 +119,7 @@ def load_config(config_path: str | None = None) -> TranslateConfig:
         instructions=raw.get("instructions", ""),
         header_detection=raw.get("header_detection", "auto"),
         header_fixed_y=raw.get("header_fixed_y"),
+        header_first_page_only=raw.get("header_first_page_only", False),
         name_translations=raw.get("name_translations", {}) or {},
         do_not_translate=raw.get("do_not_translate", []),
         do_not_translate_patterns=patterns,

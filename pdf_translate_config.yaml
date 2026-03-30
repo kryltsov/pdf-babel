@@ -7,17 +7,17 @@ target_language: Spanish
 
 # --- Document type ---
 # Affects which medical dictionaries are loaded.
-# Options: blood_test, urine_test, breast_ultrasound, general_medical
-document_type: breast_ultrasound
+# Options: blood_test, urine_test, breast_ultrasound, pet_ct, general_medical
+document_type: pet_ct
 
 # --- Instructions for Claude ---
 # Free-text guidance that Claude will follow when doing LLM-assisted translation.
 instructions: |
-  This is a Ukrainian breast ultrasound report being translated to Spanish.
-  Do not translate the clinic header area, patient info, or doctor name.
-  Keep medical classification codes (BI-RADS, BIRADS) unchanged.
-  Equipment brand/model names stay in original language.
+  This is a Ukrainian PET-CT scan report being translated to Spanish.
+  Do not translate the clinic header area.
   Patient and doctor names are proper nouns and must not be translated.
+  Drug brand names should use international names (e.g. Palbociclib, Letrozol).
+  Keep SUVmax values, dosimetry values, and measurement numbers unchanged.
   Measurement units should use international Latin abbreviations.
 
 # --- Header zone ---
@@ -26,15 +26,18 @@ instructions: |
 # "fixed" uses header_fixed_y pixel threshold from the top of the page.
 header_detection: fixed
 header_fixed_y: 100
+# Only apply header detection on the first page (page 2+ has no header)
+header_first_page_only: true
 
 # --- Person name translation ---
 name_translations:
-  # "Коваленко Софія Олегівна": "Kovalenko Sofia Olehivna"
+  "Крильцова Світлана Михайлівна": "Kryltsova Svitlana Mykhailivna"
 
 # --- Do not translate ---
 # Exact strings that should never be translated, even if they contain Cyrillic.
 do_not_translate:
   - "ЄДРПОУ"
+  - "Карпова О.О."
 
 # --- Do not translate patterns ---
 # Regex patterns for text that should be kept as-is.
@@ -43,6 +46,7 @@ do_not_translate_patterns:
   - "^\\d{2}\\.\\d{2}\\.\\d{4}$"
   - "^[A-Z][A-Z0-9\\-#%]*$"
   - "^[\\u0412B]I[-\\s]?RADS"
+  - "^https?://"
 
 # --- Custom translations ---
 # Override or add translations beyond the built-in dictionary.
@@ -53,7 +57,7 @@ custom_translations:
 # Phrase-level replacements for narrative text (applied within spans).
 # These supplement the built-in narrative phrase dictionary.
 phrase_translations:
-  # "українська фраза": "frase en español"
+  "Крильцова Світлана Михайлівна": "Kryltsova Svitlana Mykhailivna"
 
 # --- Preserve zones ---
 preserve_zones:
