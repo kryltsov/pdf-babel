@@ -27,6 +27,18 @@ def classify_zone(span_bbox, header_bottom_y):
     return "body"
 
 
+def is_rotated_span(span_bbox):
+    """Detect rotated (90-degree) text spans rendered on the page margin.
+
+    Rotated spans appear with a narrow bounding box and large vertical extent
+    because PyMuPDF reports the unrotated typesetting bbox. A normal line of
+    horizontal text has w >> h; rotated marginalia have h >> w.
+    """
+    width = span_bbox[2] - span_bbox[0]
+    height = span_bbox[3] - span_bbox[1]
+    return width < 20 and height > 50
+
+
 def extract_pdf(pdf_path, config=None):
     """Extract all text spans with layout metadata from a PDF.
 
@@ -86,7 +98,10 @@ def extract_pdf(pdf_path, config=None):
 
                     bbox = [round(x, 2) for x in span["bbox"]]
                     origin = [round(x, 2) for x in span["origin"]]
-                    zone = classify_zone(bbox, header_bottom_y)
+                    if is_rotated_span(bbox):
+                        zone = "rotated"
+                    else:
+                        zone = classify_zone(bbox, header_bottom_y)
 
                     span_data = {
                         "id": f"p{page_num}_s{span_index}",
@@ -98,7 +113,7 @@ def extract_pdf(pdf_path, config=None):
                         "color": span["color"],
                         "flags": span["flags"],
                         "zone": zone,
-                        "translate": zone != "header",
+                        "translate": zone == "body",
                     }
                     page_data["spans"].append(span_data)
                     span_index += 1

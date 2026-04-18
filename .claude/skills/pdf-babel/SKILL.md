@@ -1,6 +1,6 @@
 ---
 name: pdf-babel
-description: Translate a PDF document while preserving layout. Extracts text spans, applies rule-based medical dictionaries (lab results, ultrasound reports, PET-CT scans), and rebuilds the PDF with translated text at original positions. Asks for clarification on unknown terms with surrounding context.
+description: Translate a PDF document while preserving layout. Extracts text spans, applies rule-based medical dictionaries (lab results, ultrasound reports, PET-CT scans, immunohistochemistry reports), and rebuilds the PDF with translated text at original positions. Asks for clarification on unknown terms with surrounding context.
 argument-hint: <pdf-path>
 user_invocable: true
 ---
@@ -9,7 +9,7 @@ user_invocable: true
 
 Translate a PDF document while preserving the original layout (images, borders, fonts, positioning). Only the text changes.
 
-Supported document types: `blood_test`, `urine_test`, `breast_ultrasound`, `pet_ct`, `general_medical`.
+Supported document types: `blood_test`, `urine_test`, `breast_ultrasound`, `pet_ct`, `immunohistochemistry`, `general_medical`.
 
 ## Step 1: Check config
 
@@ -107,4 +107,6 @@ Follow the `instructions` field from the config. Core rules:
 - **Reference intervals**: Translate words, keep numbers
 - **Narrative text** (ultrasound reports, PET-CT scans, etc.): Phrase-level translation using longest-first matching — built-in dictionaries + `phrase_translations` from config
 - **PET-CT specific**: SUVmax values kept as-is, radiation units (МБк→MBq, м3в→mSv, Гр→Gy), drug names transliterated to international names
-- **Multi-page documents**: Use `header_first_page_only: true` in config when only page 1 has a header
+- **Immunohistochemistry specific**: IHC marker names (ER, PgR, Ki67, HER-2, E-Cadherin) and clone IDs kept as-is; ICD-O / SNOMED codes preserved; grading codes (G1–G3, LVI(0), PnI(0), TILs, DCIS, LCIS, RCPath, H-score) kept unchanged
+- **Multi-page documents**: Use `header_first_page_only: true` in config when only page 1 has a header; set `false` if the clinic letterhead appears on every page
+- **Rotated margin text**: 90-degree text on the page margins is auto-detected by the extractor and assigned `zone: rotated`; include `rotated` in `preserve_zones` to skip it

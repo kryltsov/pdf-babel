@@ -1,6 +1,6 @@
 # PDF Translator
 
-Translate PDF documents while preserving layout. Currently focused on medical lab results (blood tests, urine tests).
+Translate PDF documents while preserving layout. Currently focused on medical reports (blood tests, urine tests, breast ultrasound, PET-CT, immunohistochemistry).
 
 ## Setup
 

@@ -766,6 +766,205 @@ PET_CT_PHRASE_TRANSLATIONS = {
     "також": "también",
 }
 
+# === IMMUNOHISTOCHEMISTRY (Ukrainian → Turkish) ===
+# Used for pathology / IHC reports. Activated when document_type == "immunohistochemistry".
+
+# Exact-match labels: section headings, field labels, standalone phrases.
+IMMUNOHISTOCHEMISTRY_LABEL_TRANSLATIONS = {
+    # Main title
+    "ПАТОМОРФОЛОГІЧНИЙ ВИСНОВОК": "PATOMORFOLOJİK RAPOR",
+    # Patient info labels
+    "Пацієнт:": "Hasta:",
+    "Лаб. № замовлення:": "Lab. sipariş no:",
+    "Дата народж.:": "Doğum tarihi:",
+    "Стать:": "Cinsiyet:",
+    "Жіноча": "Kadın",
+    "Чоловіча": "Erkek",
+    "Код замовлення:": "Sipariş kodu:",
+    "Дата замовлення:": "Sipariş tarihi:",
+    "Лікар:": "Doktor:",
+    "КНП «ОБЛАСНИЙ ЦЕНТР ОНКОЛОГІЇ»": "KNP «BÖLGESEL ONKOLOJİ MERKEZİ»",
+    # Section titles
+    "Діагностична ІГХ 1 категорії складності": "Tanısal İHK — 1. zorluk kategorisi",
+    "Діагностична ІГХ 2 категорії складності": "Tanısal İHK — 2. zorluk kategorisi",
+    "Діагностична ІГХ 3 категорії складності": "Tanısal İHK — 3. zorluk kategorisi",
+    "Клінічні дані:": "Klinik bulgular:",
+    "Вид операції:": "Ameliyat türü:",
+    "Дата операції:": "Ameliyat tarihi:",
+    "Клінічний діагноз:": "Klinik tanı:",
+    "Макроскопічний опис:": "Makroskopik tanım:",
+    "Мікроскопічний опис:": "Mikroskopik tanım:",
+    "Результати імуногістохімічного дослідження:": "İmmünohistokimyasal inceleme sonuçları:",
+    "Заключення:": "Sonuç:",
+    "Висновок:": "Sonuç:",
+    "Коди SNOMED:": "SNOMED kodları:",
+    "Лікар-патоморфолог:": "Patolog (patomorfolog):",
+    # Field labels (follow with a value)
+    "Стандарт відповіді:": "Yanıt standardı:",
+    "Формування протоків:": "Tübül oluşumu:",
+    "Ядерний поліморфізм:": "Nükleer pleomorfizm:",
+    "Мітотичний індекс:": "Mitoz indeksi:",
+    "Лімфоваскулярна інвазія:": "Lenfovasküler invazyon:",
+    "Периневральна інвазія:": "Perinöral invazyon:",
+    # Standalone single-span items
+    "Вид дослідження: трепан.": "İnceleme türü: trepan.",
+    "Локалізація зразка: ліва грудна залоза.": "Örnek lokalizasyonu: sol meme.",
+    "Локалізація зразка: права грудна залоза.": "Örnek lokalizasyonu: sağ meme.",
+    "Квадрант локалізації новоутворення: не зазначено.": "Tümör lokalizasyon kadranı: belirtilmemiş.",
+    "Гістоархітектичний патерн новоутворення: солідний.": "Tümörün histoarşitektonik paterni: solid.",
+    "Гістоархітектичний патерн новоутворення: змішаний.": "Tümörün histoarşitektonik paterni: miks.",
+    "Кількість осередків: не зазначено.": "Odak sayısı: belirtilmemiş.",
+    "Некрози новоутворення: відсутні.": "Tümör nekrozu: yok.",
+    "Некрози новоутворення: наявні.": "Tümör nekrozu: var.",
+    "Мікрокальцифікація: відсутня.": "Mikrokalsifikasyon: yok.",
+    "Мікрокальцифікація: наявна.": "Mikrokalsifikasyon: var.",
+    "Додаткові патологічні знахідки: відсутні.": "Ek patolojik bulgular: yok.",
+    "Додаткові патологічні знахідки: наявні.": "Ek patolojik bulgular: var.",
+    # Operation descriptions
+    "Трепан-біопсія лівої м/з": "Sol memenin trepan biyopsisi",
+    "Трепан-біопсія правої м/з": "Sağ memenin trepan biyopsisi",
+    "Доставлено 1 п/б та 1 скл.": "1 parafin blok ve 1 cam lam teslim edildi.",
+    "Са лівої м/з в процесі комплексного лікування": "Sol memede Ca, kompleks tedavi sürecinde",
+    "Са правої м/з в процесі комплексного лікування": "Sağ memede Ca, kompleks tedavi sürecinde",
+    # SNOMED entries (keep the code, translate the label)
+    "T04000 Грудна залоза": "T04000 Meme",
+    "M85003 Інвазивна протокова карцинома": "M85003 İnvazif duktal karsinom",
+    "M85203 Інвазивна часточкова карцинома": "M85203 İnvazif lobüler karsinom",
+}
+
+# Phrase-level translations for wrapped/narrative IHC text (longest-first matching).
+IMMUNOHISTOCHEMISTRY_PHRASE_TRANSLATIONS = {
+    # --- Long clauses (must come first to avoid partial matches) ---
+    "Ступінь диференціювання за Елстон-Ноттінгемською модифікацією системи Блума-Річардсона:":
+        "Bloom-Richardson sisteminin Elston-Nottingham modifikasyonuna göre diferansiyasyon derecesi:",
+    "Гістологічний тип пухлини: інвазивна протокова карцинома грудної залози без особливого типу":
+        "Tümörün histolojik tipi: özel tip olmaksızın invazif duktal meme karsinomu",
+    "Гістологічний тип пухлини: інвазивна часточкова карцинома грудної залози":
+        "Tümörün histolojik tipi: invazif lobüler meme karsinomu",
+    "Інтра- та перитуморальна лімфоцитарна інфільтрація":
+        "İntra- ve peritümoral lenfositik infiltrasyon",
+    # --- IHC reaction phrases ---
+    "– позитивна (+++) ядерна реакція в": "– pozitif (+++) nükleer reaksiyon,",
+    "– позитивна (++) ядерна реакція в": "– pozitif (++) nükleer reaksiyon,",
+    "– позитивна (+) ядерна реакція в": "– pozitif (+) nükleer reaksiyon,",
+    "– реакція негативна в клітинах пухлини": "– tümör hücrelerinde negatif reaksiyon",
+    "– реакція позитивна в клітинах пухлини": "– tümör hücrelerinde pozitif reaksiyon",
+    "– позитивна ядерна реакція в \"гарячих точках\" у": "– \"sıcak noktalarda\" pozitif nükleer reaksiyon,",
+    "– позитивна мембранна реакція в клітинах пухлини.": "– tümör hücrelerinde pozitif membran reaksiyonu.",
+    "– позитивна цитоплазматична реакція в клітинах пухлини.":
+        "– tümör hücrelerinde pozitif sitoplazmik reaksiyon.",
+    "– негативна реакція,": "– negatif reaksiyon,",
+    "– позитивна реакція,": "– pozitif reaksiyon,",
+    "+ (низький рівень експресії).": "+ (düşük ekspresyon düzeyi).",
+    "+ (низький рівень експресії;": "+ (düşük ekspresyon düzeyi;",
+    "+ (високий рівень експресії).": "+ (yüksek ekspresyon düzeyi).",
+    "+ (помірний рівень експресії).": "+ (orta ekspresyon düzeyi).",
+    "низький рівень експресії": "düşük ekspresyon düzeyi",
+    "високий рівень експресії": "yüksek ekspresyon düzeyi",
+    "помірний рівень експресії": "orta ekspresyon düzeyi",
+    "рівень експресії": "ekspresyon düzeyi",
+    "клітин пухлини.": "tümör hücrelerinde.",
+    "клітин пухлини": "tümör hücrelerinde",
+    "клітинах пухлини": "tümör hücrelerinde",
+    # --- Conclusion text (wrapped across spans) ---
+    "Морфологічна картина та імунофенотип новоутворення відповідає інвазивній протоковій":
+        "Tümörün morfolojik görünümü ve immünofenotipi invazif duktal",
+    "Морфологічна картина та імунофенотип новоутворення відповідає інвазивній часточковій":
+        "Tümörün morfolojik görünümü ve immünofenotipi invazif lobüler",
+    "карциномі грудної залози без особливого типу": "meme karsinomu özel tip olmaksızın",
+    "карциномі грудної залози": "meme karsinomu",
+    "протокова карцинома in situ відсутні.": "duktal karsinom in situ yok.",
+    "часточкова карцинома in situ відсутні.": "lobüler karsinom in situ yok.",
+    "Часточкова та": "Lobüler ve",
+    "Протокова та": "Duktal ve",
+    # --- Receptor status summary ---
+    "Статус рецепторів естрогену —": "Östrojen reseptör durumu —",
+    "статус рецепторів прогестерону —": "progesteron reseptör durumu —",
+    "оцінка HER-2 - негативна реакція,": "HER-2 değerlendirmesi - negatif reaksiyon,",
+    "оцінка HER-2 - позитивна реакція,": "HER-2 değerlendirmesi - pozitif reaksiyon,",
+    # --- Macroscopic description (wrapped across spans) ---
+    "До лабораторії для проведення ІГХ дослідження": "İHK incelemesi için laboratuvara",
+    "категорії складності надійшли матеріали:": "zorluk kategorisinde materyaller geldi:",
+    "- парафіновий блок №": "- parafin blok no.",
+    "- гістологічні скельця №": "- histoloji camları no.",
+    "Для імуногістохімічного дослідження виготовлені": "İmmünohistokimyasal inceleme için hazırlandı",
+    "скелець №": "cam lam no.",
+    # --- SNOMED short entries fallback ---
+    "Грудна залоза": "Meme",
+    "Інвазивна протокова карцинома": "İnvazif duktal karsinom",
+    "Інвазивна часточкова карцинома": "İnvazif lobüler karsinom",
+    # --- Tumor descriptors ---
+    "Протокова карцинома": "Duktal karsinom",
+    "Часточкова карцинома": "Lobüler karsinom",
+    "Мікроінвазія": "Mikroinvazyon",
+    # --- Units / counts ---
+    "шт.).": "adet).",
+    "шт.);": "adet);",
+    "шт.": "adet",
+    " бали.": " puan.",
+    "бали.": "puan.",
+    "бал.": "puan.",
+    # --- Footer-like labels (may appear within longer spans) ---
+    "Дата друку:": "Yazdırma tarihi:",
+    "Пацієнт:": "Hasta:",
+    "№ зам.:": "Sipariş no.:",
+    "ICD-O код:": "ICD-O kodu:",
+    "код:": "kodu:",
+    # --- Descriptors (inline) ---
+    "позитивний,": "pozitif,",
+    "негативний;": "negatif;",
+    "позитивний;": "pozitif;",
+    "негативний,": "negatif,",
+    "позитивний.": "pozitif.",
+    "негативний.": "negatif.",
+    "позитивний": "pozitif",
+    "негативний": "negatif",
+    "позитивна": "pozitif",
+    "негативна": "negatif",
+    "позитивне": "pozitif",
+    "негативне": "negatif",
+    "відсутня.": "yok.",
+    "наявна.": "var.",
+    "відсутні.": "yok.",
+    "наявні.": "var.",
+    "відсутня": "yok",
+    "відсутні": "yok",
+    "наявна": "var",
+    "наявні": "var",
+    "не зазначено.": "belirtilmemiş.",
+    "не зазначено": "belirtilmemiş",
+    "низька.": "düşük.",
+    "середня.": "orta.",
+    "висока.": "yüksek.",
+    "низька": "düşük",
+    "середня": "orta",
+    "висока": "yüksek",
+    "солідний.": "solid.",
+    "солідний": "solid",
+    "змішаний.": "miks.",
+    "змішаний": "miks",
+    "трепан.": "trepan.",
+    "трепан": "trepan",
+    # --- Breast / laterality ---
+    "ліва грудна залоза": "sol meme",
+    "права грудна залоза": "sağ meme",
+    "лівої грудної залози": "sol meme",
+    "правої грудної залози": "sağ meme",
+    "лівої молочної залози": "sol meme",
+    "правої молочної залози": "sağ meme",
+    "лівої м/з": "sol meme",
+    "правої м/з": "sağ meme",
+    # --- Other labels likely to land inside longer spans ---
+    "Вид дослідження:": "İnceleme türü:",
+    "Локалізація зразка:": "Örnek lokalizasyonu:",
+    "Стандарт відповіді:": "Yanıt standardı:",
+    # --- Connectors ---
+    " та ": " ve ",
+    "та ": "ve ",
+    " на ": " / ",
+}
+
+
 # BI-RADS code pattern (В may be Cyrillic or Latin)
 BIRADS_PATTERN = re.compile(r'^[\u0412B]I[-\s]?RADS', re.IGNORECASE)
 
@@ -918,6 +1117,58 @@ def translate_narrative_span(text, config=None):
     return result
 
 
+def _preserve_whitespace(original, translated):
+    """Keep leading/trailing spaces from the original span text."""
+    if original.endswith(" ") and not translated.endswith(" "):
+        translated += " "
+    if original.startswith(" ") and not translated.startswith(" "):
+        translated = " " + translated
+    return translated
+
+
+def _translate_immunohistochemistry_span(text, config):
+    """Translate an IHC span using Turkish dictionaries only.
+
+    Skips the Spanish label/test/narrative dictionaries entirely and avoids the
+    `_looks_like_name` heuristic (footer lines like "Пацієнт: Крильцова Світлана
+    Михайлівна" pair a label with a name and must still be translated).
+    """
+    normalized = text.replace("\u2019", "'").replace("\u2018", "'")
+    text_stripped = normalized.strip()
+
+    # Exact-match labels
+    if text_stripped in IMMUNOHISTOCHEMISTRY_LABEL_TRANSLATIONS:
+        translated = IMMUNOHISTOCHEMISTRY_LABEL_TRANSLATIONS[text_stripped]
+        return _preserve_whitespace(text, translated), True
+
+    # Footer page number pattern: "c.1 з 2" → "s.1 / 2"
+    page_match = re.match(r'^c\.(\d+)\s+з\s+(\d+)\.?$', text_stripped)
+    if page_match:
+        return f"s.{page_match.group(1)} / {page_match.group(2)}", True
+
+    has_cyrillic = bool(re.search(r'[а-яА-ЯіІїЇєЄґҐ]', normalized))
+    if not has_cyrillic:
+        return text, False
+
+    # Phrase-level translation (longest-first). Include any user overrides
+    # from config.phrase_translations and name translations.
+    phrases = dict(IMMUNOHISTOCHEMISTRY_PHRASE_TRANSLATIONS)
+    if config and config.phrase_translations:
+        phrases.update(config.phrase_translations)
+    if config and config.name_translations:
+        phrases.update(config.name_translations)
+
+    result = normalized
+    for uk, tr in sorted(phrases.items(), key=lambda x: -len(x[0])):
+        pattern = re.escape(uk).replace(r'\ ', r'\s+')
+        result = re.sub(pattern, tr, result)
+
+    if result != normalized:
+        return _preserve_whitespace(text, result), True
+
+    return text, False
+
+
 def translate_span(span, prev_span_text="", config=None):
     """Translate a single span's text.
 
@@ -931,8 +1182,8 @@ def translate_span(span, prev_span_text="", config=None):
     text = span["text"]
     original = text
 
-    # Skip header zone
-    if span["zone"] == "header" or not span["translate"]:
+    # Skip preserved zones (header, rotated margin text, etc.)
+    if span["zone"] in ("header", "rotated") or not span["translate"]:
         return text, False
 
     # Check config-level rules
@@ -974,6 +1225,11 @@ def translate_span(span, prev_span_text="", config=None):
     # Gender value (Ж → F) - check if previous span was gender label
     if text.strip() in GENDER_MAP:
         return GENDER_MAP[text.strip()], True
+
+    # Document-type dispatch: immunohistochemistry uses its own (Turkish) dicts
+    # and deliberately skips the Spanish label/test/narrative lookups below.
+    if config and config.document_type == "immunohistochemistry":
+        return _translate_immunohistochemistry_span(text, config)
 
     # Exact match in label translations
     text_stripped = normalized.strip()
@@ -1118,7 +1374,7 @@ def find_unknowns(data, config=None):
     for page in data["pages"]:
         spans = page["spans"]
         for i, span in enumerate(spans):
-            if span["zone"] == "header":
+            if span["zone"] in ("header", "rotated"):
                 continue
             if span.get("translated", False):
                 continue
@@ -1135,13 +1391,13 @@ def find_unknowns(data, config=None):
             # Gather surrounding context (body spans only)
             context_before = []
             for j in range(max(0, i - 5), i):
-                if spans[j]["zone"] != "header" and spans[j]["text"].strip():
+                if spans[j]["zone"] not in ("header", "rotated") and spans[j]["text"].strip():
                     context_before.append(spans[j]["text"].strip())
             context_before = context_before[-3:]  # last 3
 
             context_after = []
             for j in range(i + 1, min(len(spans), i + 6)):
-                if spans[j]["zone"] != "header" and spans[j]["text"].strip():
+                if spans[j]["zone"] not in ("header", "rotated") and spans[j]["text"].strip():
                     context_after.append(spans[j]["text"].strip())
                 if len(context_after) >= 3:
                     break

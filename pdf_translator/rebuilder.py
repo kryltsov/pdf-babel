@@ -159,8 +159,13 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
             font_obj = font_obj_bold if bold and font_obj_bold else font_obj_regular
 
             text_width = font_obj.text_length(text, fontsize=size)
-            # Available width: from origin to page right margin (with small margin)
-            max_width = page_width - origin[0] - 2
+            # Shrink to the original span's right edge so translated text can't
+            # intrude on neighboring columns or run off the page. A small slack
+            # (5%) absorbs natural expansion before the shrink kicks in. The
+            # page-edge constraint is the hard upper bound.
+            span_width_from_origin = bbox[2] - origin[0]
+            page_width_from_origin = page_width - origin[0] - 2
+            max_width = min(span_width_from_origin * 1.05, page_width_from_origin)
             if text_width > max_width and max_width > 0:
                 size = size * max_width / text_width
 
