@@ -52,6 +52,34 @@ def is_bold(flags):
     return bool(flags & (1 << 4))  # bit 4 = bold
 
 
+def available_width(span, all_spans, page_width, gap=2.0):
+    """Horizontal space from a span's origin to the next same-line neighbor.
+
+    Falls back to the page right margin when no neighbor sits on the same
+    visual line to the right. Used to decide how far translated text can
+    grow before needing to shrink.
+    """
+    origin_x = span["origin"][0]
+    y0 = span["bbox"][1]
+    y1 = span["bbox"][3]
+
+    right_edge = page_width - gap
+    for other in all_spans:
+        if other is span:
+            continue
+        ox0, oy0, _, oy1 = other["bbox"]
+        # Require vertical overlap (same visual line)
+        if oy0 >= y1 or oy1 <= y0:
+            continue
+        # Neighbor must start strictly to the right of our origin
+        if ox0 <= origin_x:
+            continue
+        if ox0 < right_edge:
+            right_edge = ox0
+
+    return max(0.0, right_edge - origin_x - gap)
+
+
 def find_background_rect(filled_rects, bbox):
     """Find the filled rectangle behind a text span from the page's drawings.
 
@@ -159,13 +187,11 @@ def rebuild_pdf(original_pdf_path, translated_data, output_path):
             font_obj = font_obj_bold if bold and font_obj_bold else font_obj_regular
 
             text_width = font_obj.text_length(text, fontsize=size)
-            # Shrink to the original span's right edge so translated text can't
-            # intrude on neighboring columns or run off the page. A small slack
-            # (5%) absorbs natural expansion before the shrink kicks in. The
-            # page-edge constraint is the hard upper bound.
-            span_width_from_origin = bbox[2] - origin[0]
-            page_width_from_origin = page_width - origin[0] - 2
-            max_width = min(span_width_from_origin * 1.05, page_width_from_origin)
+            # Shrink only when the translated text would collide with the next
+            # span on the same visual line (or run past the page margin).
+            # Spans that ended mid-line in the original get the full remaining
+            # line width instead of being capped at their old bbox.x1.
+            max_width = available_width(span, page_info["spans"], page_width)
             if text_width > max_width and max_width > 0:
                 size = size * max_width / text_width
 
