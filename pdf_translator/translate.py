@@ -965,6 +965,154 @@ IMMUNOHISTOCHEMISTRY_PHRASE_TRANSLATIONS = {
 }
 
 
+# === MRI LABEL TRANSLATIONS (Ukrainian → English) ===
+# Exact-match short labels used in MRI reports.
+MRI_LABEL_TRANSLATIONS = {
+    "Протокол": "Protocol",
+    "Пацієнт:": "Patient:",
+    "Рік народження:": "Year of birth:",
+    "Реєстраційний номер:": "Registration number:",
+    "Висновок:": "Conclusion:",
+    "Лікар:": "Doctor:",
+    "Врач:": "Doctor:",
+    "правий": "right",
+    "лівий": "left",
+}
+
+
+# === MRI PHRASE TRANSLATIONS (Ukrainian → English) ===
+# Narrative MRI report phrases. Applied longest-first via regex substitution,
+# tolerating extra whitespace between words.
+MRI_PHRASE_TRANSLATIONS = {
+    # --- Footer / disclaimer ---
+    "До уваги пацієнтів: висновок обстеження не є діагнозом і потребує подальшої":
+        "Attention patients: the examination conclusion is not a diagnosis and requires further",
+    "консультації з лікарем, що направив на обстеження.":
+        "consultation with the doctor who referred for the examination.",
+
+    # --- Study headings ---
+    "мрт-дослідження кульшові суглоби": "MRI examination of the hip joints",
+    "На мр-томограмах кульшових суглобів:": "On MR images of the hip joints:",
+    "На мр-томограмах поперекового відділу хребта виявляється згладженість":
+        "MRI of the lumbar spine reveals flattening of",
+    "поперекового лордозу.": "the lumbar lordosis.",
+
+    # --- Hip joint findings ---
+    "суглобовий хрящ, що покриває головку стегнової кістки і дах":
+        "the articular cartilage covering the femoral head and the roof",
+    "кульшової западини нерівномірно стоншений, суглобова щілина дещо звужена.":
+        "of the acetabulum is unevenly thinned, the joint space is slightly narrowed.",
+    "кульшової западини нерівномірно стоншений, суглобова щілина звужена.":
+        "of the acetabulum is unevenly thinned, the joint space is narrowed.",
+    "Визначається розрив передньо-латеральних відділів суглобової губи, у основи":
+        "A tear of the anterolateral portions of the labrum is identified; at the base of",
+    "вертельної губи візуалізується ділянка кістоподібної перебудови трабекулярної":
+        "the trochanteric ridge, an area of cyst-like remodeling of the trabecular",
+    "структури «даху» вертлюгової западини розмірами до":
+        "structure of the acetabular «roof» is visualized, measuring up to",
+    "Голівка правої": "The head of the right",
+    "стегнової кістки грибоподібно деформована. Визначаються крайові кісткові":
+        "femur is mushroom-shaped deformed. Marginal bony",
+    "розростання кульшової западини та головки стегнової кістки. Субхондрально в":
+        "outgrowths of the acetabulum and the femoral head are identified. Subchondrally, in",
+    "передньо-латеральних відділах даху кульшової западини візуалізуються поодинокі":
+        "the anterolateral portions of the acetabular roof, isolated",
+    "кістоподібні осередки розмірами до": "cyst-like foci up to",
+    "У порожнині суглоба виявляється дещо": "In the joint cavity, a slightly",
+    "надлишкова кількость рідини. Зв'язка головки стегнової кістки дещо стоншена.":
+        "excessive amount of fluid is present. The ligamentum teres is slightly thinned.",
+    "Клубово-стегнова зв'язка – без особливостей. Параартікулярні м'язи без":
+        "The iliofemoral ligament is unremarkable. The periarticular muscles are without",
+    "особливостей.": "abnormalities.",
+    "Суглобова губа з мр-ознаками дегенеративних змін. Субхондральні відділи головки":
+        "The labrum shows MR signs of degenerative changes. The subchondral portions of the head",
+    "стегнової кістки не змінені.": "of the femur are unchanged.",
+    "У порожнині суглоба визначається дещо надмірна":
+        "In the joint cavity, a slightly excessive",
+    "кількість рідини. Зв'язка головки стегнової кістки не змінена. Визначаються":
+        "amount of fluid is identified. The ligamentum teres is unchanged. There are",
+    "незначні крайові кісткові розростання кульшової западини. Клубово-стегнова":
+        "minor marginal bony outgrowths of the acetabulum. The iliofemoral",
+    "зв'язка не змінена.": "ligament is unchanged.",
+    "Інтенсивність мр-сигналу від кісткового мозку наявних відділів кульшових":
+        "MR signal intensity of the bone marrow in the visualized portions of the hip",
+    "кісток, шийки та верхньої третини діафіза стегнової кістки з обох сторін у межах":
+        "bones, the neck and upper third of the femoral diaphysis bilaterally is within",
+    "норми.": "normal limits.",
+    "Мр-ознаки двобічного остеоартрозу кульшових суглобів":
+        "MR signs of bilateral osteoarthritis of the hip joints",
+    "розриву суглобової губи правого кульшового суглобу":
+        "tear of the labrum of the right hip joint",
+    "справа та": "on the right and",
+    "зліва,": "on the left,",
+    "зліва": "on the left",
+    "справа": "on the right",
+
+    # --- Lumbar spine findings ---
+    "Підкреслені талії та «кути», прогнуті замикальні пластинки тіл хребців":
+        "Accentuated waists and «corners», concave endplates of the vertebral bodies",
+    "У субхондральних відділах тіла хребця":
+        "In the subchondral regions of vertebral body",
+    "візуалізується перебудова кістково-":
+        "remodeling of the bone-",
+    "мозкової речовини за типом жирової дистрофії, Модік 2.":
+        "marrow substance of fatty degeneration type, Modic 2, is visualized.",
+    "Ослаблений мр-сигнал від міжхребцевих дисків":
+        "Reduced MR signal from the intervertebral discs",
+    "на Т2зз.": "on T2-weighted images.",
+    "висота міжхребцевих дисків": "height of the intervertebral discs",
+    "Знижена": "Decreased",
+    "У ХРС": "At segment",
+    "диск випинається парамедіанно вліво до":
+        "the disc protrudes paramedially to the left up to",
+    "диск випинається дорсально до":
+        "the disc protrudes dorsally up to",
+    "парамедіанно вправо до": "paramedially to the right up to",
+    "правіше від серединної лінії до": "to the right of the midline up to",
+    "правіше серединної лінії до": "to the right of the midline up to",
+    "парамедіанно вліво до": "paramedially to the left up to",
+    "Передньо-задній розмір дурального мішка":
+        "Anteroposterior size of the dural sac",
+    "розмір дурального мішка": "size of the dural sac",
+    "Передньо-задній": "Anteroposterior",
+    "парамедіанна": "paramedian",
+    "Краї фасеток дуговідросткових суглобів загострені.":
+        "The facet joint margins are sharpened.",
+    "Жовта зв'язка не змінена.": "The ligamentum flavum is unchanged.",
+    "Передньо-задній розмір хребетного каналу на рівні":
+        "Anteroposterior size of the spinal canal at the level of",
+    "Індекс каналу на рівні": "Canal index at level",
+    "Спинний мозок простежується до рівня":
+        "The spinal cord is traced to the level of",
+    "без ознак вогнищевої патології.":
+        "without signs of focal pathology.",
+    "Корені дужок не змінені.": "The pedicle roots are unchanged.",
+    "Полісегментарний остеохондроз поперекового відділу хребта.":
+        "Polysegmental osteochondrosis of the lumbar spine.",
+    "Лівобічна парамедіанна протрузія диска":
+        "Left-sided paramedian disc protrusion at",
+    "Дорсальна, правобічна парамедіанна протрузія диска":
+        "Dorsal, right-sided paramedian disc protrusion at",
+    "Дорсальна, правобічна парамедіанна, лівобічна":
+        "Dorsal, right-sided paramedian, left-sided",
+    "Дорсальна, правобічна задньо-латеральна":
+        "Dorsal, right-sided posterolateral",
+    "Дорсальна, правобічна": "Dorsal, right-sided",
+    "задньо-латеральна протрузія диска":
+        "posterolateral disc protrusion at",
+    "протрузія диска": "disc protrusion at",
+    "Спондильоз.": "Spondylosis.",
+    "Спондилоартроз.": "Spondyloarthrosis.",
+    "Рекомендується консультація вертебролога.":
+        "Vertebrologist consultation is recommended.",
+
+    # --- Short tokens ---
+    "мм.": "mm.",
+    "мм,": "mm,",
+    "мм": "mm",
+}
+
+
 # BI-RADS code pattern (В may be Cyrillic or Latin)
 BIRADS_PATTERN = re.compile(r'^[\u0412B]I[-\s]?RADS', re.IGNORECASE)
 
@@ -1169,6 +1317,60 @@ def _translate_immunohistochemistry_span(text, config):
     return text, False
 
 
+def _translate_mri_span(text, config):
+    """Translate an MRI radiology span using English dictionaries only.
+
+    Skips the Spanish label/test/narrative dictionaries entirely, like the
+    immunohistochemistry path.
+    """
+    normalized = text.replace("\u2019", "'").replace("\u2018", "'")
+    text_stripped = normalized.strip()
+
+    # Exact-match labels
+    if text_stripped in MRI_LABEL_TRANSLATIONS:
+        translated = MRI_LABEL_TRANSLATIONS[text_stripped]
+        return _preserve_whitespace(text, translated), True
+
+    has_cyrillic = bool(re.search(r'[а-яА-ЯіІїЇєЄґҐ]', normalized))
+    if not has_cyrillic:
+        # Apply numeric style fixes even to Cyrillic-free spans so that
+        # e.g. "– 0,58." reads "– 0.58." alongside the translated clause.
+        styled = re.sub(r'(?<=\d),(?=\d)', '.', normalized)
+        styled = re.sub(r'(?<=\d)х(?=\d)', 'x', styled)
+        if styled != normalized:
+            return _preserve_whitespace(text, styled), True
+        return text, False
+
+    # Note: no `_looks_like_name` gate here — named entities are handled by
+    # `config.name_translations` (checked before dispatch in translate_span),
+    # and the heuristic would otherwise skip two-word medical phrases like
+    # "Спондильоз. Спондилоартроз.".
+
+    phrases = dict(MRI_PHRASE_TRANSLATIONS)
+    if config and config.phrase_translations:
+        phrases.update(config.phrase_translations)
+    if config and config.name_translations:
+        phrases.update(config.name_translations)
+
+    result = normalized
+    for uk, en in sorted(phrases.items(), key=lambda x: -len(x[0])):
+        pattern = re.escape(uk).replace(r'\ ', r'\s+')
+        result = re.sub(pattern, en, result)
+
+    # Roman-numeral stages: "IVст.-" / "IIIст-" → "stage IV " / "stage III "
+    result = re.sub(r'\b([IVX]+)ст\.?-\s*', r'stage \1 ', result)
+    result = re.sub(r'\b([IVX]+)ст\.?', r'stage \1', result)
+    # Decimal comma → dot inside numeric values (e.g. "2,9" → "2.9")
+    result = re.sub(r'(?<=\d),(?=\d)', '.', result)
+    # Cyrillic "х" used as multiplication sign between numbers (e.g. "14.6х13.7")
+    result = re.sub(r'(?<=\d)х(?=\d)', 'x', result)
+
+    if result != normalized:
+        return _preserve_whitespace(text, result), True
+
+    return text, False
+
+
 def translate_span(span, prev_span_text="", config=None):
     """Translate a single span's text.
 
@@ -1230,6 +1432,10 @@ def translate_span(span, prev_span_text="", config=None):
     # and deliberately skips the Spanish label/test/narrative lookups below.
     if config and config.document_type == "immunohistochemistry":
         return _translate_immunohistochemistry_span(text, config)
+
+    # MRI uses its own (English) dicts; also skips Spanish lookups below.
+    if config and config.document_type == "mri":
+        return _translate_mri_span(text, config)
 
     # Exact match in label translations
     text_stripped = normalized.strip()

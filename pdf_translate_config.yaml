@@ -3,71 +3,55 @@
 
 # --- Languages ---
 source_language: Ukrainian
-target_language: Turkish
+target_language: English
 
 # --- Document type ---
 # Affects which medical dictionaries are loaded.
-# Options: blood_test, urine_test, breast_ultrasound, pet_ct, immunohistochemistry, general_medical
-document_type: immunohistochemistry
+# Options: blood_test, urine_test, breast_ultrasound, pet_ct, immunohistochemistry, mri, general_medical
+document_type: mri
 
 # --- Instructions for Claude ---
 # Free-text guidance that Claude will follow when doing LLM-assisted translation.
 instructions: |
-  This is a Ukrainian immunohistochemistry (IHC) pathology report being translated to Turkish.
-  Do not translate the clinic header area.
-  Do not translate the rotated 90-degree text on the left margin of each page.
-  Patient and doctor names are proper nouns and must not be translated (transliterate).
-  Keep IHC marker names (ER, PgR, Ki67, HER-2, E-Cadherin) and clone IDs unchanged.
-  Keep ICD-O codes, SNOMED codes, BI-RADS, LVI, PnI, DCIS, LCIS, TILs, RCPath, H-score, G1-G3 as-is.
-  Keep measurement values, percentages, and dates unchanged.
+  This is a Ukrainian MRI radiology report being translated to English.
+  Patient and doctor names are proper nouns and must be transliterated (not translated).
+  Keep vertebral level codes (L2, L3, L4, L5, S1, Th11-12, L2-3, L4-5, L5-S1) unchanged.
+  Keep imaging sequence codes (T1, T2, T2-weighted, etc.) in English form.
+  Keep "Modic" grading unchanged; use "stage" for "ст." (степінь).
+  Use decimal point (not comma) in measurements; use "x" (not Cyrillic х) between dimensions.
+  Use standard radiology terminology: femoral head, acetabulum, labrum, dural sac,
+  ligamentum flavum, zygapophyseal/facet joints, spondylosis, spondyloarthrosis, etc.
 
 # --- Header zone ---
-# How to identify the non-translatable header area.
+# These MRI PDFs have no clinic letterhead; body content starts near the top.
 header_detection: fixed
-header_fixed_y: 100
-# Diła letterhead appears on every page — apply header detection to all pages
+header_fixed_y: 0
 header_first_page_only: false
 
 # --- Preserve zones ---
-# Spans in these zones are never translated.
-# "rotated" = 90-degree text on the page margins (auto-detected by extractor)
 preserve_zones:
   - header
   - rotated
 
 # --- Person name translation ---
 name_translations:
-  "Крильцова Світлана Михайлівна": "Kryltsova Svitlana Mykhailivna"
-  "Осокіна Крістіна Ігорівна": "Osokina Kristina Ihorivna"
-  "Бєлєва Л.С.": "Byelyeva L.S."
+  "Крильцов І.В.": "Kryltsov I.V."
+  "Браташ Л.А.": "Bratash L.A."
 
 # --- Do not translate ---
-# Exact strings that should never be translated, even if they contain Cyrillic.
-do_not_translate:
-  - "ЄДРПОУ"
+do_not_translate: []
 
 # --- Do not translate patterns ---
-# Regex patterns for text that should be kept as-is.
 do_not_translate_patterns:
   - "^\\d{6,}$"
   - "^\\d{2}\\.\\d{2}\\.\\d{4}$"
   - "^[A-Z][A-Z0-9\\-#%]*$"
-  - "^[\\u0412B]I[-\\s]?RADS"
   - "^https?://"
-  # IHC-specific codes that must be preserved as-is
-  - "^G[1-4]\\.?$"
-  - "^LVI\\(\\d+\\)\\.?$"
-  - "^PnI\\(\\d+\\)\\.?$"
-  - "^[TM]\\d{4,5}$"           # SNOMED codes like T04000, M85003
-  - "^\\d{4}/\\d{1,2}\\)?\\.?$"  # ICD-O like 8500/3).
+  # MRI vertebral level codes (e.g. L2-3, L5-S1, Th11-12)
+  - "^(?:L|S|Th|C)\\d+(?:-(?:L|S|Th|C)?\\d+)?\\.?$"
 
 # --- Custom translations ---
-# Override or add translations beyond the built-in dictionary.
-custom_translations:
-  # "Українське слово": "Turkish word"
+custom_translations: {}
 
 # --- Phrase translations ---
-# Phrase-level replacements for narrative text (applied within spans).
-# These supplement the built-in narrative phrase dictionary.
-phrase_translations:
-  "Крильцова Світлана Михайлівна": "Kryltsova Svitlana Mykhailivna"
+phrase_translations: {}

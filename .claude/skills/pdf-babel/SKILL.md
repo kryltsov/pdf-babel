@@ -9,7 +9,7 @@ user_invocable: true
 
 Translate a PDF document while preserving the original layout (images, borders, fonts, positioning). Only the text changes.
 
-Supported document types: `blood_test`, `urine_test`, `breast_ultrasound`, `pet_ct`, `immunohistochemistry`, `general_medical`.
+Supported document types: `blood_test`, `urine_test`, `breast_ultrasound`, `pet_ct`, `immunohistochemistry`, `mri`, `general_medical`.
 
 ## Step 1: Check config
 
