@@ -1384,8 +1384,8 @@ def translate_span(span, prev_span_text="", config=None):
     text = span["text"]
     original = text
 
-    # Skip preserved zones (header, rotated margin text, etc.)
-    if span["zone"] in ("header", "rotated") or not span["translate"]:
+    # Skip preserved zones (header, footer, rotated margin text, etc.)
+    if span["zone"] in ("header", "footer", "rotated") or not span["translate"]:
         return text, False
 
     # Check config-level rules
@@ -1407,17 +1407,27 @@ def translate_span(span, prev_span_text="", config=None):
     if is_value_span(text):
         return text, False
 
-    # Normalize curly quotes to straight quotes for matching
-    # (PDFs often use RIGHT SINGLE QUOTATION MARK U+2019 instead of apostrophe)
-    normalized = text.replace("\u2019", "'").replace("\u2018", "'")
+    # Normalize look-alike punctuation that appears in PDFs but differs from
+    # what editors type: curly quotes and the Greek question mark (U+037E),
+    # which some typesetters use in place of a semicolon.
+    normalized = (
+        text.replace("\u2019", "'")
+            .replace("\u2018", "'")
+            .replace("\u037e", ";")
+    )
 
-    # Check custom translations first (from config)
+    # Check custom translations first (from config). Dict keys are matched
+    # against the whitespace-stripped span text; leading/trailing whitespace
+    # from the original is preserved on the output.
     if config and config.custom_translations:
         norm_stripped = normalized.strip()
         if norm_stripped in config.custom_translations:
             translated = config.custom_translations[norm_stripped]
-            if text.endswith(" ") and not translated.endswith(" "):
-                translated += " "
+            return _preserve_whitespace(text, translated), True
+        # Fallback: match against the raw text too, in case the dict author
+        # intentionally included whitespace in the key.
+        if normalized in config.custom_translations:
+            translated = config.custom_translations[normalized]
             return translated, True
 
     # BI-RADS codes (В may be Cyrillic В or Latin B)
@@ -1573,21 +1583,37 @@ def find_unknowns(data, config=None):
     Skips proper names and strings in the config's do_not_translate list.
     """
     cyrillic_re = re.compile(r'[а-яА-ЯіІїЇєЄґҐ]')
+    # For non-Cyrillic source languages, treat any alphabetic body span left
+    # untranslated as an unknown candidate.
+    source_is_cyrillic = not config or config.source_language in (
+        "Ukrainian", "Russian", "Bulgarian", "Serbian"
+    )
+    letter_re = re.compile(r'[A-Za-zÀ-ÿĀ-žŞşĞğİıÇçÖöÜü]')
     do_not_translate = set(config.do_not_translate) if config else set()
+    dnt_patterns = config.do_not_translate_patterns if config else []
 
     unknowns = []
 
     for page in data["pages"]:
         spans = page["spans"]
         for i, span in enumerate(spans):
-            if span["zone"] in ("header", "rotated"):
+            if span["zone"] in ("header", "footer", "rotated"):
                 continue
             if span.get("translated", False):
                 continue
             text = span["text"].strip()
-            if not cyrillic_re.search(text):
-                continue
+            if source_is_cyrillic:
+                if not cyrillic_re.search(text):
+                    continue
+            else:
+                if not letter_re.search(text):
+                    continue
+                # Skip pure numbers/dates/codes
+                if is_value_span(text):
+                    continue
             if text in do_not_translate:
+                continue
+            if any(p.match(text) for p in dnt_patterns):
                 continue
             if _looks_like_name(text):
                 continue
@@ -1597,13 +1623,13 @@ def find_unknowns(data, config=None):
             # Gather surrounding context (body spans only)
             context_before = []
             for j in range(max(0, i - 5), i):
-                if spans[j]["zone"] not in ("header", "rotated") and spans[j]["text"].strip():
+                if spans[j]["zone"] not in ("header", "footer", "rotated") and spans[j]["text"].strip():
                     context_before.append(spans[j]["text"].strip())
             context_before = context_before[-3:]  # last 3
 
             context_after = []
             for j in range(i + 1, min(len(spans), i + 6)):
-                if spans[j]["zone"] not in ("header", "rotated") and spans[j]["text"].strip():
+                if spans[j]["zone"] not in ("header", "footer", "rotated") and spans[j]["text"].strip():
                     context_after.append(spans[j]["text"].strip())
                 if len(context_after) >= 3:
                     break

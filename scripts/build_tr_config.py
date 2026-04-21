@@ -1,0 +1,520 @@
+"""Build pdf_translate_config.yaml for Spanish -> Turkish oncology translation.
+
+Produces two alternative configs: one for the plain 'Informe Clinico' narrative
+letter (no header/footer) and one for the 'informe dr Barnadas' clinic report
+(with letterhead above y=170 and legal footer from y=670).
+
+Run with: python scripts/build_tr_config.py <informe|barnadas>
+"""
+
+import sys
+import yaml
+
+# --- Per-span translations (Spanish -> Turkish) ---
+# Keys are the exact span text as extracted from the PDFs. Leading/trailing
+# whitespace is preserved by the translator.
+TRANSLATIONS = {
+    # ========== INFORME CLINICO (narrative letter) ==========
+    "Barcelona 30 de marzo 2026": "Barselona, 30 Mart 2026",
+    "INFORME VISITA TELAMATICA de la paciente: KRYLTSOVA Svitlana HC 50039122.":
+        "Hastanın TELEMATİK ZİYARET RAPORU: KRYLTSOVA Svitlana HC 50039122.",
+    "Paciente 85 años de edad con los siguientes antecedentes: 1) Hiperglicemia; 2) ":
+        "85 yaşında hasta, şu öz geçmişe sahip: 1) Hiperglisemi; 2) ",
+    "Hernia de hiatus.": "Hiatal herni.",
+    "En Noviembre 2022 fue diagnosticada de una neoplasia de mama izquierda ":
+        "Kasım 2022'de sol meme neoplazisi tanısı aldı; ",
+    "localmente avanzada y diseminada dos lesiones óseas en columna vertebral. La biopsia ":
+        "lokal olarak ilerlemiş ve yayılmış, vertebral kolonda iki kemik lezyonu ile. Meme tümörünün ",
+    "de la tumoración mamaria fue compatible con carcinoma infiltrante NST grado 2.IHQ: ":
+        "biyopsisi infiltratif karsinom NST grade 2 ile uyumluydu. IHQ: ",
+    "Rc Estrógeno Positivo 100% 3+, Rc Progesterona Positivo 50%3+, HER2 NEGATIVO Ki67: ":
+        "Östrojen Reseptörü Pozitif 100% 3+, Progesteron Reseptörü Pozitif 50% 3+, HER2 NEGATİF Ki67: ",
+    "28%. Se realizó estudio con PAAF axilar izquierda que fue  negativa para células ":
+        "28%. Sol aksiller PAAF çalışması yapıldı; malign hücre açısından ",
+    "malignas. Se realizó estadificación con PET-TC que mostró: Lesión captante local en ":
+        "negatifti. PET-BT ile evrelendirme yapıldı ve şunu gösterdi: ",
+    "cuadrante supero-externo y adenopatías axilares izquierdas hipermetabólicas. Lesión ":
+        "üst dış kadranda tutulum gösteren lokal lezyon ve hipermetabolik sol aksiller adenopatiler. ",
+    "lítica en T6 y otra hipointensa en T9 sugestivas de metástasis. Se completó estudio con ":
+        "T6'da litik ve T9'da hipointens lezyonlar metastaz düşündürüyor. Çalışma ",
+    "RNM de columna vertebral que mostró una lesión compatible con metástasis en T5 sin ":
+        "vertebral kolon MR ile tamamlandı; T5'te arka duvar tutulumu olmayan metastazla uyumlu ",
+    "afectación  del muro posterior.": "bir lezyon gösterdi.",
+    "La paciente fue estadificada como afecta de un tumor maligno de mama ":
+        "Hasta, meme malign tümörü olarak evrelendirildi: ",
+    "cT4,cN0-1,M1": "cT4,cN0-1,M1",
+    "Fue valorada en el seno del Comité Multidisciplinar de Tumores de Mama y se ":
+        "Meme Tümörleri Multidisipliner Komitesinde değerlendirildi ve ",
+    "consideró que era candidata a Tratamiento sistémico y evaluación posterior.":
+        "sistemik tedavi ve sonraki değerlendirme için aday olduğuna karar verildi.",
+    "Inició tratamiento con Letrozol y Palbociclib a dosis plenas el 01 de diciembre ":
+        "1 Aralık 2022'de tam dozda Letrozol ve Palbosiklib tedavisine başladı; ",
+    "2022 con buena tolerancia inicial e inicio de respuesta, constatándose una desaparición ":
+        "başlangıçta iyi tolerans ve yanıt başlangıcı gözlendi; sol memedeki ülsere ",
+    "de la lesión ulcerada de la mama izquierda, con normalización de la captación de T5 y ":
+        "lezyonun kaybolduğu, T5 ve T9'daki tutulumun normalleştiği görüldü. ",
+    "T9. A la paciente se le tuvo que reducir al dosis de palbociclib y efectuar algunos ":
+        "Hastada palbosiklib dozu azaltıldı ve belirgin asteni nedeniyle ",
+    "descansos por presentar astenia marcada.": "bazı tedavi araları verildi.",
+    "En la PET-TC de  valoración  de Marzo 2025 se detectó: reaparición de una ":
+        "Mart 2025 değerlendirme PET-BT'sinde şu saptandı: sol memenin üst dış kadranında ",
+    "lesión captante  de  mama izquierda de  30x18mm  en cuadrante  supero-externo y ":
+        "30x18 mm tutulum gösteren lezyonun yeniden ortaya çıkması ve ",
+    "adenopatías axilares hipermetabólicas. Lesión lítica en T5 con mayor destrucción ósea ":
+        "hipermetabolik aksiller adenopatiler. T5'te daha fazla kemik destrüksiyonu ve ",
+    "y  fractura  por  compresión  SUBV  6,06  y  otra  captación  en  en  T9  sugestivas  de ":
+        "kompresyon fraktürü olan litik lezyon SUBV 6,06 ve T9'da metastaz düşündüren ",
+    "metástasis sin evidenciarse otras lesiones.":
+        "başka bir tutulum, başka lezyon saptanmadı.",
+    "La paciente fue valorada como afecta de una lenta Progresión de enfermedad ":
+        "Hasta yavaş hastalık progresyonu olarak değerlendirildi, ",
+    "con un PFS 29 meses a Palbociclib letrozol. Se planteó la indicación de radioterapia ":
+        "Palbosiklib-letrozol ile PFS 29 ay. Dorsal kolona palyatif radyoterapi ",
+    "paliativa sobre columna dorsal que se realizó en Kiev administrándose en T5 y T9 una ":
+        "endikasyonu konuldu; Kiev'de uygulandı, T5 ve T9'a toplam 30 Gy doz verildi ve ",
+    "dosis de 30 Gy/T con buena respuesta.": "iyi yanıt alındı.",
+    "Por otra parte se inició tratamiento de segunda línea con Fulvetsrant a dosis ":
+        "Öte yandan, 5 mg/gün everolimus ile kombine tam dozda Fulvestrant ile ",
+    "plenas combiando con everolimus a dosis de 5 mg/dia. El 28 de mayo 2025 inciño ":
+        "ikinci basamak tedaviye başlandı. 28 Mayıs 2025'te başladı ",
+    "tratamiento  combinado,  no  obstante  presentó  mala  tolerancia  a  everolimus,  con ":
+        "kombine tedavi, ancak everolimusa kötü tolerans gösterdi; ilerleyici asteni ",
+    "astenia progresiva y tuvo que ser suspendido el 15 de setiembre 2025, manteniendo ":
+        "nedeniyle 15 Eylül 2025'te kesilmek zorunda kalındı; ",
+    "tratamiento con Fulvestrant en monoterapia. ":
+        "Fulvestrant monoterapisi ile tedavi sürdürüldü. ",
+    "Por razones de distancia, se realizaron todos los controles por via telemática a ":
+        "Mesafe nedeniyle tüm kontroller oğlu aracılığıyla ",
+    "través de su hijo.": "telematik yolla yapıldı.",
+    "En el día de hoy (30-03-26) se realiza nueva visita por Videconferencia con su ":
+        "Bugün (30-03-26) oğlu ile video konferans yoluyla yeni bir ziyaret ",
+    "hijo.": "yapıldı.",
+    "En la conversación el hijo refiere empeoramiento del estado físico de su madre, ":
+        "Görüşmede oğlu, annesinin fiziksel durumunun kötüleştiğini, ",
+    "habiendo perdido apetito y peso. Desde hace un mes y medio la paciente se notó la ":
+        "iştah ve kilo kaybettiğini belirtiyor. Bir buçuk aydır hasta sol memedeki ",
+    "reaparición del nódulo de la mama izquierda con ulceración cutánea y sangrado ":
+        "nodülün yeniden ortaya çıktığını, kutanöz ülserasyon ve sık kanama ",
+    "frecuente. No refiere dolor local ni tampoco en la región dorsal. La paciente aun es ":
+        "olduğunu fark etti. Lokal ağrı veya sırt bölgesinde ağrı bildirmiyor. Hasta hâlâ ",
+    "autónoma para sus actividades diarias. Continua residiendo en Ucrania.":
+        "günlük aktivitelerinde bağımsızdır. Ukrayna'da yaşamaya devam ediyor.",
+    "Aporta las siguientes pruebas complementarias:":
+        "Aşağıdaki tamamlayıcı tetkikleri sunuyor:",
+    "1)": "1)",
+    "ANALITICA 19-03-26": "LABORATUVAR 19-03-26",
+    "              Hb  13,8 L: 5960 G: 3230 Plaqs 297000":
+        "              Hb 13,8 L: 5960 G: 3230 Trombosit 297000",
+    "              Calcio 2,48 Sodio 138  Creatinina 76,8 Urico 279":
+        "              Kalsiyum 2,48 Sodyum 138 Kreatinin 76,8 Ürik asit 279",
+    "              Bb total 9,45 (normal) Bb directa 3,99":
+        "              Total bilirubin 9,45 (normal) Direkt bilirubin 3,99",
+    "              GOT 20 GPT 29 GGTP 24 Falc 107  ":
+        "              GOT 20 GPT 29 GGTP 24 ALP 107  ",
+    "               Colesterol 6,921 TG 1,39 Proteinas totales 80,9":
+        "               Kolesterol 6,921 TG 1,39 Toplam protein 80,9",
+    " CEA: 4,08  (previo Noviembre 2025: 3,31;  Julio 2025: 3,26/ previo 32,9 en ":
+        " CEA: 4,08 (önceki Kasım 2025: 3,31; Temmuz 2025: 3,26 / önceki 32,9 Mayıs ",
+    "mayo 2025) ": "2025) ",
+    "Ca 15.3: 106 (previo Noviembre 2025 58,1; en Julio 25:66,5 /previo 85,4 (en ":
+        "Ca 15.3: 106 (önceki Kasım 2025: 58,1; Temmuz 25: 66,5 / önceki 85,4 (Mayıs ",
+    "mayo 2025)": "2025)",
+    "2) ECOGRAFIA MAMARIA 27-03-26": "2) MEME ULTRASONU 27-03-26",
+    "- Mama izquierda: en posición de las 6 horas se identifica una lesión quística irregular ":
+        "- Sol meme: saat 6 pozisyonunda düzensiz kistik bir lezyon saptandı, ",
+    "de 8 mm": "8 mm",
+    "- Mama derecha : a las 12 horas se visualiza formación quística de forma irregular con ":
+        "- Sağ meme: saat 12 pozisyonunda düzensiz şekilli, zayıf vaskülarizasyonlu, ",
+    "escasa vascularización de diámetro 4 mm.;": "4 mm çapında kistik formasyon görüldü.;",
+    "- Ganglios linfáticos en las zonas regionales de drenaje linfático aumentados, excepto ":
+        "- Orta aksiller grup dışında, bölgesel lenfatik drenaj alanlarındaki lenf düğümleri büyümüş; ",
+    "los axilares medios: en la derecha hasta  0.8 mm, 0,6 mm, 6 mm; en la izquierda hasta ":
+        "sağda 0.8 mm, 0,6 mm, 6 mm'ye kadar; solda 11 mm, 5 mm, 11 mm'ye kadar, ",
+    "11 mm, 5 mm, 11mm,  sin alteración de la cortical":
+        "kortikal değişiklik yok",
+    "2)": "2)",
+    "PET-TAC 24-03-26": "PET-BT 24-03-26",
+    "En comparación con PET de Marzo 2025 se observa:":
+        "Mart 2025 PET'i ile karşılaştırıldığında şunlar görüldü:",
+    "- Mama izquierda en cuadrante supero-externo  lesión tumoral de 36x24x54 ":
+        "- Sol memenin üst dış kadranında 36x24x54 mm ",
+    "mm con SUV max 9,18 que había aumentado de forma significativa de tamaño ":
+        "SUV max 9,18 olan tümöral lezyon, boyut olarak belirgin şekilde artmış, ",
+    "con extensión a cuadrantes inferiores y signos de infiltración y ulceración ":
+        "alt kadranlara uzanım ve kutanöz infiltrasyon ve ülserasyon ",
+    "cutánea": "bulguları",
+    "- Aparición de adenopatías en axila izquierda, uno en nivel II de 15x9 mm con ":
+        "- Sol aksillada adenopatiler ortaya çıkmış, biri seviye II'de 15x9 mm ",
+    "SUV max 8,49 y otros de 7 mm con SUV max 2,18 que son valorados como ":
+        "SUV max 8,49 ve diğerleri 7 mm SUV max 2,18; bunlar nonspesifik olarak ",
+    "inespecíficos  ": "değerlendirildi  ",
+    "- Foco de destrucción del cuerpo vertebral de T5 con fractura patológica y ":
+        "- T5 vertebra korpusunda patolojik fraktür ve ",
+    "compresión cuerpo vertebral con mínima captación metabólica (SUV max 3,27). ":
+        "kompresyonla birlikte minimal metabolik tutulum (SUV max 3,27) olan destrüksiyon odağı. ",
+    "Área de aumento de metabolismo en apófisis transversa del arco y apófisis ":
+        "Arkın transvers proçesinde metabolizma artışı alanı ve ",
+    "transversa con protrusión moderada al canal espinal":
+        "spinal kanala orta derecede protrüzyon gösteren transvers proçes",
+    "- Foco hipermetabólico en pedículo del arco de T6 de12x7 mm con SUV max ":
+        "- T6 arkının pedikülünde 12x7 mm, SUV max 5,86 olan ",
+    "5,86": "hipermetabolik odak",
+    "- Ausencia de captaciones pulmonares, hepáticas o en otras localizaciones.":
+        "- Pulmoner, hepatik veya diğer lokalizasyonlarda tutulum yok.",
+    "VALORACION ONCOLOGICA": "ONKOLOJİK DEĞERLENDİRME",
+    "Paciente de 85 años de edad diagnosticada en diciembre 2022 de una neoplasia ":
+        "85 yaşında hasta, Aralık 2022'de yaygın sol meme neoplazisi ",
+    "de mama izquierda diseminada (afectación cutánea y ósea con baja carga tumoral) que ":
+        "(düşük tümör yüküyle kutanöz ve kemik tutulumu) tanısı aldı; ",
+    "recibió una primera línea de tratamiento con letrozol-palbociclib, presentando una ":
+        "letrozol-palbosiklib ile birinci basamak tedavi aldı; meme lezyonunun ve ",
+    "excelente  respuesta  con  práctica  desaparición  de  la  lesión  mamaria  y  de  las ":
+        "vertebral kolondaki tutulumların neredeyse tamamen kaybolmasıyla ",
+    "captaciones  de  columna  vertebral.  Tras  29  meses  de  tratamiento  presentó  una ":
+        "mükemmel bir yanıt gösterdi. 29 aylık tedaviden sonra dorsal kolonda ",
+    "progresión local y ósea mínima en columna dorsal T4 y T9 que planteo la indicación  de ":
+        "T4 ve T9'da lokal ve minimal kemik progresyonu görüldü; bu nedenle ",
+    "radioterapia paliativa sobre T4 y el inicio de terapia endocrina de segunda linea con ":
+        "T4'e palyatif radyoterapi ve Fulvestrant ve Everolimus ile ",
+    "Fulvestrant y Everolimus que inició en mayo 2025 con regular tolerancia al everolimus ":
+        "ikinci basamak endokrin tedavi endikasyonu konuldu; Mayıs 2025'te başladı, ",
+    "que finalmente tuvo que ser suspendido en setiembre 2025, siguiendo monoterapia ":
+        "everolimusa orta düzey tolerans gösterdi ve sonunda Eylül 2025'te kesilmek ",
+    "con Fulvestrant hasta la actualidad.":
+        "zorunda kalındı; günümüze kadar Fulvestrant monoterapisi ile devam edildi.",
+    "A los 10 meses de la terapia de segunda linea presenta una clara progresión de ":
+        "İkinci basamak tedavinin 10. ayında, CA 15.3 değerinin artışı ve PET-BT ile ",
+    "la enfermedad identificada por incremento del valor de CA 15.3 y por PET-TC con ":
+        "saptanan belirgin hastalık progresyonu mevcut: sol meme bezinde, aksiller lenf ",
+    "reaparición  de  lesiones  con  gran  actividad  metabólica  en  la  glándula  mamaria ":
+        "nodlarında, T5 ve T6'da yüksek metabolik aktiviteli lezyonların yeniden ortaya ",
+    "izquierda, ganglios axilares, T5 y T6 sin aparente afectación visceral.":
+        "çıkması, belirgin visseral tutulum olmaksızın.",
+    "Ante esta evolución y en el contexto de la paliación se recomienda iniciar ":
+        "Bu gidişat karşısında ve palyasyon bağlamında kemoterapiye başlanması ",
+    "tratamiento con quimioterapia existiendo dos opciones: 1) Capecitabina oral a dosis de ":
+        "önerilir; iki seçenek mevcuttur: 1) Oral Kapesitabin, ",
+    "1000 mg/m2 cada 12 horas dias 1 a 14 dias con ciclos cada 21 dias; o bien 2) ":
+        "1000 mg/m2 dozda her 12 saatte bir, 1–14. günlerde, 21 günlük siklüslerle; ya da 2) ",
+    "Quimioterapia endovenosa con paclitaxel en régimen de administración semanal. ":
+        "Haftalık uygulama rejiminde paklitaksel ile intravenöz kemoterapi. ",
+    "Por  otra  parte,  se  debería  considerar  la  administración  de   un  fármaco ":
+        "Öte yandan, subkutan yolla 28 günde bir 120 mg Denosumab veya ",
+    "antiresortivo oseo como es Denosumab 120 mg cada 28 dias por via subcutánea, o ":
+        "21–28 günde bir 4 mg dozda intravenöz zoledronik asit gibi bir ",
+    "bien acido Zoledrónico por via endovenosa a dosis de 4 mg cada 21-28 días.":
+        "kemik antirezorptif ilaç uygulanması değerlendirilmelidir.",
+    "En el caso de que la lesión mamaria ulcerada estuviera sangrando de forma ":
+        "Ülsere meme lezyonunun sürekli kanama gösterdiği ve kemoterapiye yanıt ",
+    "constante y si no existiera una respuesta a la quimioterapia se podría considerar una ":
+        "alınmadığı durumda, palyatif amaçla basit mastektomiden oluşan ",
+    "cirugía de higiene consistente en mastectomía simple con finalidad paliativa. En el ":
+        "bir hijyen cerrahisi düşünülebilir. Cerrahinin ",
+    "supuesto que la cirugía no fuera practicable, se podría evaluar una indicación de ":
+        "uygulanabilir olmaması durumunda, meme bezine hemostatik radyoterapi ",
+    "radioterapia hemostática sobre la glándula mamaria.": "endikasyonu değerlendirilebilir.",
+    "Teniendo en cuenta  el estado actual de la paciente y por razones de distancia y ":
+        "Hastanın mevcut durumu ve mesafe ile ülkemize seyahat zorlukları ",
+    "dificultades para desplazarse a nuestro país, sería recomendable que fuera asistida en ":
+        "göz önüne alındığında, sitotoksik tedaviyi izlemek ve toksisitelerini ",
+    "un centro con especialistas en Oncología Médica para monitorizar el tratamiento ":
+        "değerlendirmek üzere Medikal Onkoloji uzmanlarının bulunduğu bir merkezde ",
+    "citostático y evaluar sus toxicidades.": "takip edilmesi tavsiye edilir.",
+    "De forma adicional, antes de iniciar la quimioterapia con capecitabina sería ":
+        "Ek olarak, kapesitabin ile kemoterapiye başlamadan önce bu ilacın ",
+    "necesario evaluar el estado de los polimorfismos de la DPyD para ajustar las dosis de ":
+        "dozlarını ayarlamak için DPYD polimorfizmlerinin durumunu değerlendirmek ",
+    "este medicamento.": "gereklidir.",
+    "Comentamos todas estas opciones con su hijo Igor, que debe de someterlas a ":
+        "Tüm bu seçenekleri oğlu Igor ile görüştük; bunları hastanın ",
+    "consideración de la paciente y comunicar su decisión para poder definir el siguiente ":
+        "değerlendirmesine sunması ve bir sonraki tedavi adımını belirleyebilmek için ",
+    "paso de tratamiento.": "kararını bildirmesi gerekmektedir.",
+    "Finalmente, si la paciente empeorara de su estado, teniendo en cuenta su edad ":
+        "Son olarak, hastanın durumu kötüleşirse, yaşı göz önüne alındığında ",
+    "parecería aconsejable no realizar ningún sobre-esfuerzo de tratamiento y realizar solo ":
+        "tedavide aşırı efora girmemek ve yalnızca semptomatik ve destek ",
+    "tratamiento sintomático y de soporte.": "tedavisi uygulamak tavsiye edilir.",
+    "Acordamos  estas  cuestiones  con  su  hijo  y  quedamos  pendientes  de  su ":
+        "Bu konuları oğlu ile görüştük ve yanıtını ",
+    "respuesta.": "bekliyoruz.",
+    "Atentamente,": "Saygılarımla,",
+    "Fdo. ": "İmza ",
+    "Dr. A Barnadas. Colegiado numero 10817048": "Dr. A Barnadas. Sicil No 10817048",
+    "Especialista en Oncología Médica": "Medikal Onkoloji Uzmanı",
+    "Consultor Senior Oncologia IOT IBCC": "Kıdemli Danışman, Onkoloji IOT IBCC",
+    "PAUTA DE TRATAMIENTO CON CAPECITABINA": "KAPESİTABİN TEDAVİ ŞEMASI",
+    "Antes de iniciar el tratamiento sería de interés conocer el estado de los ":
+        "Tedaviye başlamadan önce, oral kemoterapiye bağlı ikincil toksisite ",
+    "polimorfismos  del  gen  DPyD  (gen  de  la  dihidropirimidina  deshidrogenasa)  para ":
+        "riskini en aza indirmek amacıyla DPYD geninin (dihidropirimidin dehidrogenaz geni) ",
+    "minimizar el riesgo de toxicidad secundaria a la quimioterapia oral.":
+        "polimorfizmlerinin durumunu bilmek yararlı olacaktır.",
+    "Peso actual 49 Kg Talla 169 IMC: 1,49": "Mevcut kilo 49 kg Boy 169 VKİ: 1,49",
+    "PAUTA de CAPECITABINA 1000 mg/m2 cada 12 horas días 1 al 14 del ciclo":
+        "KAPESİTABİN ŞEMASI 1000 mg/m2 her 12 saatte bir, siklüsün 1.–14. günleri",
+    "Ciclos cada 21 dias": "21 günde bir siklüs",
+    "CAPECITABINA (XELODA® ) CAPSULAS DE 500 MG": "KAPESİTABİN (XELODA® ) 500 MG KAPSÜL",
+    "-": "-",
+    "3 capsulas por la mañana con el desayuno": "Sabah kahvaltı ile 3 kapsül",
+    "3 capsulas diarias por la noche con la cena": "Akşam yemeği ile günde 3 kapsül",
+    "Administrar diariamente del día 1 al 14 inclusive y SUSPENDER.":
+        "1. gün ile 14. gün dahil her gün uygulayın ve DURDURUN.",
+    "Los ciclos se repiten cada 21 días pero se DEBE efectuar un control de analítica ":
+        "Siklüsler 21 günde bir tekrarlanır, ancak sonraki siklüse başlamadan önce ",
+    "(hemograma, función renal y función hepática) previo al inicio del siguiente ciclo.":
+        "(hemogram, böbrek fonksiyonu ve karaciğer fonksiyonu) laboratuvar kontrolü YAPILMALIDIR.",
+    "En el caso de observarse diarreas profusas, liquidas  (más de 7-8 episodios de ":
+        "Bol ve sulu ishal gözlenmesi durumunda (günde 7–8 ishal ",
+    "diarrea al día SE DEBE SUSPENDER LA MEDICACION de forma inmediata).":
+        "epizodundan fazla İLAÇ DERHAL KESİLMELİDİR).",
+    "Se recomienda la supervisión del tratamiento por personal especializado., si ":
+        "Tedavinin uzman personel tarafından izlenmesi önerilir; ancak ",
+    "bien ofrecemos nuestro control cada 21 días.": "21 günde bir kendi kontrolümüzü de sunuyoruz.",
+    "Se sugiere que su hijo nos comunique cuando disponga de la medicación para ":
+        "Oğlunun, ilacı temin ettiğinde tedaviyi planlamak üzere yeni bir ",
+    "planificar el tratamiento programando una nueva teleconferencia.":
+        "telekonferans programlayarak bize bildirmesi önerilir.",
+
+    # ========== BARNADAS (clinic report) ==========
+    "Médico Responsable:": "Sorumlu Hekim:",
+    " Barnadas Molins, Agusti": " Barnadas Molins, Agusti",
+    "Servicio/Unidad:": "Servis/Birim:",
+    " Oncología Médica general": " Genel Medikal Onkoloji",
+    "ANTECEDENTES": "ÖZGEÇMİŞ",
+    "Alergias": "Alerjiler",
+    ":": ":",
+    "Descripción: No Referidas": "Açıklama: Bildirilmedi",
+    "HÁBITOS VIDA": "YAŞAM ALIŞKANLIKLARI",
+    "El paciente declara ser no fumador.": "Hasta sigara kullanmadığını beyan ediyor.",
+    "El paciente declara no consumir bebidas alcohólicas.":
+        "Hasta alkollü içecek tüketmediğini beyan ediyor.",
+    "El paciente declara no consumir sustancias tóxicas. ":
+        "Hasta toksik madde tüketmediğini beyan ediyor. ",
+    "Peso actual (kg): 77. Talla (cm): 169. IMC: 26,96":
+        "Mevcut kilo (kg): 77. Boy (cm): 169. VKİ: 26,96",
+    "ANTECEDENTES MÉDICOS": "TIBBİ ÖZGEÇMİŞ",
+    "Sin hipertensión arterial. Diabetes. Sin anticoagulación. ":
+        "Arteriyel hipertansiyon yok. Diyabet. Antikoagülan tedavi yok. ",
+    "No es portador de marcapasos y/o desfibrilador. ":
+        "Kalp pili ve/veya defibrilatör taşımıyor. ",
+    "No es portador de dispositivo implantable.": "İmplante edilebilir cihaz taşımıyor.",
+    "MOTIVO DE CONSULTA": "KONSÜLTASYON NEDENİ",
+    "Neoplasias malignas de mama": "Meme malign neoplazileri",
+    "CONSULTA ACTUAL": "MEVCUT KONSÜLTASYON",
+    "EVOLUCIÓN": "SEYİR",
+    "Paciente 85 años de edad con Neoplasia de mama IZDA localmente avanzada y diseminada dos lesiones oseas en columna vertebral":
+        "85 yaşında hasta, sol memede lokal ileri ve yaygın neoplazi, vertebral kolonda iki kemik lezyonu ile",
+    "Bx CARCINOMA INFILTRANTE grado 2": "Biyopsi: İNFİLTRATİF KARSİNOM grade 2",
+    "IHQ: Rc ESTROGENO POSITIVO 100% Rc PROGESTERONA POSITIVO 50%3+ HER2 NEGATIVO Ki67: 28%":
+        "IHQ: Östrojen Reseptörü POZİTİF 100% Progesteron Reseptörü POZİTİF 50% 3+ HER2 NEGATİF Ki67: 28%",
+    "PAAF axilar negativa": "Aksiller PAAF negatif",
+    "PET-TC: Lesion captante local en QSext y adenopatias axilares hipermetabolicas":
+        "PET-BT: Üst dış kadranda lokal tutulum gösteren lezyon ve hipermetabolik aksiller adenopatiler",
+    "Lesion litica en D6 y otra hipointensa en D9 sugestivas de metástasis":
+        "D6'da litik lezyon ve D9'da hipointens bir başka lezyon, metastaz düşündürüyor",
+    "RNM Lesión compatible con metástasis en D5 sin afectación del muro posterior":
+        "MR: D5'te arka duvar tutulumu olmayan metastazla uyumlu lezyon",
+    "Valoración en Comité Tumores de Mama candidata a Tratamiento sistémico y evaluación de cirugía local + RDT en D5 según":
+        "Meme Tümörleri Komitesinde değerlendirildi; sistemik tedaviye aday ve D5'te lokal cerrahi + RT değerlendirmesi,",
+    "evolución": "gidişata göre",
+    "INICIÓ LETROZOL+PALBOCICLIB el dia 01-12-2022":
+        "LETROZOL+PALBOSİKLİB 01-12-2022 tarihinde BAŞLADI",
+    "PET TC valoración respuesta Marzo 2025": "PET BT Mart 2025 yanıt değerlendirmesi",
+    "- lesión captante de mama izquierda de 30x18mm en QSext y adenopatías axilares hipermetabólicas":
+        "- Sol memenin üst dış kadranında 30x18 mm tutulum gösteren lezyon ve hipermetabolik aksiller adenopatiler",
+    "- Lesion litica en T5 con mayor destrucción óseay fractura por compresión SUBV 6,06 y otra captación en en D9 sugestivas de":
+        "- T5'te daha fazla kemik destrüksiyonu ve kompresyon fraktürü olan litik lezyon SUBV 6,06 ve D9'da metastaz düşündüren başka bir tutulum,",
+    "metástasis no otras lesiones": "başka lezyon yok",
+    "Lenta Progresión de enfermedad PFS 29 meses a Palbociclib letrozol":
+        "Palbosiklib-letrozol ile PFS 29 ay, yavaş hastalık progresyonu",
+    "RDT en Kiev entre T4 y T9 30 Gy/T": "Kiev'de T4 ve T9 arasına RT 30 Gy/T",
+    "TERAPIA SEGUNDA LINEA FULVESTRANT (dosis plena) EVEROLIMUS a 5 mg":
+        "İKİNCİ BASAMAK TEDAVİ FULVESTRANT (tam doz) EVEROLİMUS 5 mg",
+    "Inicio Fulvestrant Dia 1 28-05-25": "Fulvestrant başlangıç Gün 1: 28-05-25",
+    "Inicio everolimus 24-05-25": "Everolimus başlangıç: 24-05-25",
+    "SUSPENSION EVEROLIMUS el 15-09-25 por intolerancia siguió Fulvestrant":
+        "EVEROLİMUS 15-09-25'te intolerans nedeniyle KESİLDİ; Fulvestrant devam etti",
+    "Visita de control": "Kontrol ziyareti",
+    "_____________________________________________________________________________________________________________":
+        "_____________________________________________________________________________________________________________",
+    "Se realiza visita por Videconferencia con su hijo":
+        "Oğlu ile video konferans yoluyla görüşme yapıldı",
+    "En la conversación el hijo refiere empeoramiento del estado físico de su madre, habiendo perdido apetito y peso":
+        "Görüşmede oğlu, annesinin fiziksel durumunun kötüleştiğini, iştah ve kilo kaybettiğini belirtiyor",
+    "Desde hace un mes y medio la paciente se notó la reaparición del nódulo de la mama izquierda con ulceración cutánea y sangrado":
+        "Bir buçuk aydır hasta, sol memedeki nodülün yeniden ortaya çıktığını, kutanöz ülserasyon ve kanama olduğunu fark etti,",
+    "frecuente": "sık",
+    "No refiere dolor local ni tampoco en la región dorsal": "Lokal ağrı veya sırt bölgesinde ağrı bildirmiyor",
+    "La paciente aun es autónoma para sus actividades diarias":
+        "Hasta hâlâ günlük aktivitelerinde bağımsız",
+    "Continua residiendo en Ucrania": "Ukrayna'da yaşamaya devam ediyor",
+    "Hb 13,8 L: 5960 G: 3230 Plaqs 297000": "Hb 13,8 L: 5960 G: 3230 Trombosit 297000",
+    "Calcio 2,48 Sodio 138 Creatinina 76,8 Urico 279":
+        "Kalsiyum 2,48 Sodyum 138 Kreatinin 76,8 Ürik asit 279",
+    "Bb total 9,45 (normal) Bb directa 3,99": "Total bilirubin 9,45 (normal) Direkt bilirubin 3,99",
+    "GOT 20 GPT 29 GGTP 24 Falc 107 ": "GOT 20 GPT 29 GGTP 24 ALP 107 ",
+    "Colesterol 6,921 TG 1,39 Proteinas totales 80,9": "Kolesterol 6,921 TG 1,39 Toplam protein 80,9",
+    "CEA: 4,08 (previo Noviembre 2025: 3,31; Julio 2025: 3,26/ previo 32,9 en mayo 2025) ":
+        "CEA: 4,08 (önceki Kasım 2025: 3,31; Temmuz 2025: 3,26 / önceki 32,9 Mayıs 2025) ",
+    "Ca 15.3: 106 (previo Noviembre 2025 58,1; en Julio 25:66,5 /previo 85,4 (en mayo 2025)":
+        "Ca 15.3: 106 (önceki Kasım 2025: 58,1; Temmuz 25: 66,5 / önceki 85,4 (Mayıs 2025)",
+    "ECOGRAFIA MAMARIA 27-03-26": "MEME ULTRASONU 27-03-26",
+    "- Mama izquierda: en posición de las 6 horas se identifica una lesión quística irregular de 8 mm":
+        "- Sol meme: saat 6 pozisyonunda 8 mm düzensiz kistik bir lezyon saptandı",
+    "- Mama derecha : a las 12 horas se visualiza formación quística de forma irregular con escasa vascularización de diámetro 4 mm.":
+        "- Sağ meme: saat 12 pozisyonunda düzensiz şekilli, zayıf vaskülarizasyonlu, 4 mm çapında kistik formasyon görüldü.",
+    "- Ganglios linfáticos en las zonas regionales de drenaje linfático aumentados, excepto los axilares medios ":
+        "- Orta aksiller grup dışında, bölgesel lenfatik drenaj alanlarındaki lenf düğümleri büyümüş ",
+    "a la derecha hasta 0.8 mm, 0,6 mm, 6 mm a la izquierda hasta 11 mm, 5 mm, 11mm, sin alteración de la cortical":
+        "sağda 0.8 mm, 0,6 mm, 6 mm'ye kadar; solda 11 mm, 5 mm, 11 mm'ye kadar, kortikal değişiklik yok",
+    "- Mama izquierda en cuadrante supero-externo lesión tumoral de 36x24x54 mm con SUV max 9,18 que ha aumentado de forma":
+        "- Sol memenin üst dış kadranında 36x24x54 mm SUV max 9,18 olan tümöral lezyon, belirgin şekilde",
+    "significativa de tamaño con extensión a cuadrantes inferiores y signos de infiltración y ulceración cutánea":
+        "boyutça artmış, alt kadranlara uzanım ve kutanöz infiltrasyon ile ülserasyon bulguları var",
+    "- Aparición de adenopatías en axila izquierda, uno en nivel II de 15x9 mm con SUV max 8,49 y otros de 7 mm con SUV max 2,18 que":
+        "- Sol aksillada adenopatiler ortaya çıkmış, biri seviye II'de 15x9 mm SUV max 8,49 ve diğerleri 7 mm SUV max 2,18;",
+    "son valorados como inespecíficos ": "bunlar nonspesifik olarak değerlendirildi ",
+    "- Foco de destrucción del cuerpo vertebral de T5 con fractura patológica y compresión cuerpo vertebral con mínima captación":
+        "- T5 vertebra korpusunda patolojik fraktür ve kompresyonla birlikte minimal metabolik tutulum olan",
+    "metabólica (SUV max 3,27). Área de aumento de metabolismo en apófisis transversa del arco y apófisis transversa con protrusión":
+        "destrüksiyon odağı (SUV max 3,27). Arkın transvers proçesinde metabolizma artışı alanı ve spinal kanala",
+    "moderada al canal espinal": "orta derecede protrüzyon gösteren transvers proçes",
+    "- Foco hipermetabólico en pedículo del arco de T6 de12x7 mm con SUV max 5,86":
+        "- T6 arkının pedikülünde 12x7 mm, SUV max 5,86 olan hipermetabolik odak",
+    "- Ausencia e captaciones pulmonares, hepáticas o en otras localizaciones.":
+        "- Pulmoner, hepatik veya diğer lokalizasyonlarda tutulum yok.",
+    "Paciente de 85 años de edad diagnosticada en diciembre 2022 de una neoplasia de mama izquierda diseminada (afectación cutánea y":
+        "85 yaşında hasta, Aralık 2022'de yaygın sol meme neoplazisi (kutanöz ve",
+    "ósea con baja carga tumoral) que recibió una primera línea de tratamiento con letrozol-palbociclib, presentando una excelente respuesta":
+        "düşük tümör yüküyle kemik tutulumu) tanısı aldı; letrozol-palbosiklib ile birinci basamak tedavi aldı ve mükemmel yanıt gösterdi;",
+    "con práctica desaparición de la lesión mamaria y de las captaciones de columna vertebral. Tras 29 meses de tratamiento presentó una":
+        "meme lezyonunun ve vertebral kolondaki tutulumların neredeyse tamamen kaybolması. 29 aylık tedaviden sonra",
+    "progresión local y ósea mínima en columna dorsal T4 y T9 que planteo la indicación de radioterapia paliativa sobre T4 y el inicio de":
+        "dorsal kolonda T4 ve T9'da lokal ve minimal kemik progresyonu görüldü; bu nedenle T4'e palyatif radyoterapi ve",
+    "terapia endocrina de segunda linea con Fulvestrant y Everolimus que inició en mayo 2025 con regular tolerancia al everolimus que":
+        "Fulvestrant ve Everolimus ile ikinci basamak endokrin tedavi endikasyonu konuldu; Mayıs 2025'te başladı, everolimusa orta tolerans gösterdi ve",
+    "finalmente tuvo que ser suspendido en setiembre 2025, siguiendo monoterapia con Fulvestrant hasta la actualidad.":
+        "sonunda Eylül 2025'te kesildi; günümüze kadar Fulvestrant monoterapisi ile devam edildi.",
+    "A los 10 meses de la terapia de segunda linea presenta una clara progresión de la enfermedad identificada por incremento del valor de":
+        "İkinci basamak tedavinin 10. ayında, değerinin artışı ile saptanan belirgin hastalık progresyonu mevcut",
+    "CA 15.3 y por PET-TC con reaparición de lesiones con gran actividad metabólica en la glándula mamaria izquierda, ganglios axilares,":
+        "CA 15.3 ve PET-BT ile sol meme bezinde, aksiller lenf nodlarında, yüksek metabolik aktiviteli lezyonların yeniden ortaya çıkması,",
+    "T5 y T6 sin aparente afectación visceral.": "T5 ve T6'da, belirgin visseral tutulum yok.",
+    "Ante esta evolución y en el contexto de la paliación se recomienda iniciar tratamiento con quimioterapia existiendo dos opciones: 1)":
+        "Bu gidişat karşısında ve palyasyon bağlamında kemoterapiye başlanması önerilir; iki seçenek mevcuttur: 1)",
+    "Capecitabina oral a dosis de 1000 mg/m2 cada 12 horas dias 1 a 14 dias con ciclos cada 21 dias; o bien 2) Quimioterapia endovenosa":
+        "Oral Kapesitabin, 1000 mg/m2 dozda her 12 saatte bir, 1–14. günlerde, 21 günlük siklüslerle; ya da 2) İntravenöz kemoterapi,",
+    "con paclitaxel en régimen de administración semanal. Por otra parte, se debería considerar la administración de un fármaco":
+        "haftalık uygulama rejiminde paklitaksel ile. Öte yandan, bir kemik antirezorptif ilaç",
+    "antiresortivo oseo como es Denosumab 120 mg cada 28 dias por via subcutánea, o bien acido Zoledrónico por via endovenosa a dosis":
+        "uygulanması değerlendirilmelidir; subkutan yolla 28 günde bir 120 mg Denosumab veya intravenöz yolla",
+    "de 4 mg cada 21-28 días.": "21–28 günde bir 4 mg dozda zoledronik asit.",
+    "se podría considerar una cirugía de higiene consistente en mastectomia simple con finalidad paliativa. En el supuesto que la cirugía no":
+        "palyatif amaçla basit mastektomiden oluşan bir hijyen cerrahisi düşünülebilir. Cerrahinin",
+    "fuera practicable, se podría evaluar una indicación de radioterapia hemostática sobre la glándula mamaria.":
+        "uygulanabilir olmaması durumunda, meme bezine hemostatik radyoterapi endikasyonu değerlendirilebilir.",
+    "Teniendo en cuenta el estado actual de la paciente y por razones de distancia y dificultades para desplazarse a nuestro país, seria":
+        "Hastanın mevcut durumu ve mesafe ile ülkemize seyahat zorlukları göz önüne alındığında,",
+    "recomendable que fuera asistida en un centro con especialistas en Oncología Médica para monitorizar el tratamiento citostático y":
+        "sitotoksik tedaviyi izlemek ve toksisitelerini değerlendirmek üzere Medikal Onkoloji uzmanlarının bulunduğu bir merkezde takip edilmesi tavsiye edilir,",
+    "evaluar sus toxicidades.": "toksisitelerini değerlendirmek.",
+    "De forma adicional, antes de iniciar la quimioterapia con capecitabina seria necesario evaluar el estado de los polimorfismos de la":
+        "Ek olarak, kapesitabin ile kemoterapiye başlamadan önce bu ilacın dozlarını ayarlamak için",
+    "DPyD para ajustar las dosis de este medicamento.": "DPYD polimorfizmlerinin durumunu değerlendirmek gereklidir.",
+    "Comentamos todas estas opciones con su hijo Igor, que debe de someterlas a consideración de la paciente y comunicar su decisión para":
+        "Tüm bu seçenekleri oğlu Igor ile görüştük; bunları hastanın değerlendirmesine sunması ve",
+    "poder definir el siguiente paso de tratamiento.": "bir sonraki tedavi adımını belirleyebilmek için kararını bildirmesi gerekmektedir.",
+    "Finalmente, si la paciente empeorara de su estado, teniendo en cuenta su edad parecería aconsejable no realizar ningún sobre-esfuerzo":
+        "Son olarak, hastanın durumu kötüleşirse, yaşı göz önüne alındığında tedavide aşırı efora girmemek",
+    "de tratamiento y realizar solo tratamiento sintomático y de soporte.":
+        "ve yalnızca semptomatik ve destek tedavisi uygulamak tavsiye edilir.",
+    "Acordamos estas cuestiones con su hijo y quedamos pendientes de su respuesta.. ":
+        "Bu konuları oğlu ile görüştük ve yanıtını bekliyoruz.. ",
+    "DIAGNÓSTICO": "TANI",
+    "Neoplasia maligna de mama": "Meme malign neoplazisi",
+    "TRATAMIENTO, PLAN DE ACTUACIÓN Y RECOMENDACIONES": "TEDAVİ, EYLEM PLANI VE TAVSİYELER",
+    "ALTA": "TABURCU",
+    "No": "Hayır",
+    "Fecha:": "Tarih:",
+    " 30/03/2026 21:01": " 30/03/2026 21:01",
+    "Fdo:": "İmza:",
+    "Nº Colegiado:": "Sicil No:",
+    " 17048": " 17048",
+}
+
+
+# --- Patterns we never translate ---
+DO_NOT_TRANSLATE_PATTERNS = [
+    r"^\d{6,}$",                                   # long numeric IDs
+    r"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$",             # dates DD-MM-YY / DD/MM/YYYY
+    r"^\d{2}\.\d{2}\.\d{4}$",
+    r"^https?://",                                 # URLs
+    r"^[\w\.-]+@[\w\.-]+\.\w+$",                    # emails
+    r"^\d+[,.]?\d*\s*(mm|cm|kg|Kg|mg|g|Gy|mSv|MBq|ml|mL|%)$",
+    r"^cT\d[,a-zA-Z0-9\-]*$",                       # TNM classifications
+    r"^[TDLSC]\d{1,2}(?:-[TDLSC]?\d{1,2})?$",        # vertebral level codes
+    r"^[A-Z][A-Z0-9\-#%]*$",                         # ALL-CAPS codes (HER2, NST)
+    r"^\d{3}\.\d{3}\.\d{3}$",                        # phone numbers
+    r"^\([+]?\d+\)\s+\d",                             # +34 phone prefix
+]
+
+
+BASE = {
+    "source_language": "Spanish",
+    "target_language": "Turkish",
+    "document_type": "general_medical",
+    "instructions": (
+        "Spanish oncology clinical narrative translated to Turkish.\n"
+        "Patient and doctor names stay as-is (KRYLTSOVA, Svitlana, Barnadas, Igor).\n"
+        "Medical codes stay as-is: cT4, cN0-1, M1, T5, T6, T9, D5, D6, D9, SUV max values,\n"
+        "HER2, Ki67, PAAF, RNM, PET-TC, PFS, NST, IHQ, DPYD, XELODA.\n"
+        "Drug names use Turkish forms: Palbociclib→Palbosiklib, Paclitaxel→Paklitaksel,\n"
+        "Capecitabina→Kapesitabin. Keep Fulvestrant, Everolimus, Letrozol, Denosumab,\n"
+        "zoledronik asit unchanged.\n"
+        "Preserve dates, numbers, measurement units, URLs, phone numbers."
+    ),
+    "preserve_zones": ["header", "footer", "rotated"],
+    "name_translations": {
+        "KRYLTSOVA Svitlana": "KRYLTSOVA Svitlana",
+        "Dr. A Barnadas": "Dr. A Barnadas",
+        "Barnadas Molins, Agusti": "Barnadas Molins, Agusti",
+        "Ucrania": "Ukrayna",
+        "Kiev": "Kiev",
+    },
+    "do_not_translate": [],
+    "do_not_translate_patterns": DO_NOT_TRANSLATE_PATTERNS,
+    "custom_translations": TRANSLATIONS,
+    "phrase_translations": {},
+}
+
+
+PROFILES = {
+    "informe": {
+        "header_detection": "fixed",
+        "header_fixed_y": 0,
+        "header_first_page_only": False,
+        "footer_fixed_y": None,
+    },
+    "barnadas": {
+        "header_detection": "fixed",
+        "header_fixed_y": 170,
+        "header_first_page_only": False,
+        "footer_fixed_y": 670,
+    },
+}
+
+
+def main():
+    if len(sys.argv) != 2 or sys.argv[1] not in PROFILES:
+        print("usage: build_tr_config.py <informe|barnadas>", file=sys.stderr)
+        sys.exit(1)
+    profile = PROFILES[sys.argv[1]]
+    cfg = {**BASE, **profile}
+    with open("pdf_translate_config.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False, width=120)
+    print(f"wrote pdf_translate_config.yaml for profile={sys.argv[1]}")
+
+
+if __name__ == "__main__":
+    main()

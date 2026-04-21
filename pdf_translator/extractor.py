@@ -19,11 +19,13 @@ def find_header_bottom(blocks):
     return 110.0
 
 
-def classify_zone(span_bbox, header_bottom_y):
+def classify_zone(span_bbox, header_bottom_y, footer_top_y=None):
     """Classify a span's zone based on its vertical position."""
     y_top = span_bbox[1]
     if y_top < header_bottom_y:
         return "header"
+    if footer_top_y is not None and y_top >= footer_top_y:
+        return "footer"
     return "body"
 
 
@@ -63,6 +65,7 @@ def extract_pdf(pdf_path, config=None):
         and config.header_detection != "auto"
         and config.header_fixed_y is not None
     )
+    footer_top_y = config.footer_fixed_y if config is not None else None
 
     for page_num in range(len(doc)):
         page = doc[page_num]
@@ -101,7 +104,7 @@ def extract_pdf(pdf_path, config=None):
                     if is_rotated_span(bbox):
                         zone = "rotated"
                     else:
-                        zone = classify_zone(bbox, header_bottom_y)
+                        zone = classify_zone(bbox, header_bottom_y, footer_top_y)
 
                     span_data = {
                         "id": f"p{page_num}_s{span_index}",
